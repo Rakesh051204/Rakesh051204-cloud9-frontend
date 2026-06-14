@@ -1,13 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Chat from './pages/Chat'
+import './index.css'
+
+import Home from './pages/Home'
+import Results from './pages/Results'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Chat />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Results />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
