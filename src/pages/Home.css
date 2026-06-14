@@ -1,148 +1,141 @@
-.grok-layout {
+.grok-app {
   display: flex;
   min-height: 100vh;
-  background: #0a0a0a;
-  color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f0f0f;
+  color: white;
 }
 
 .sidebar {
   width: 260px;
-  background: #111;
-  border-right: 1px solid #222;
-  padding: 16px;
+  background: #171717;
+  border-right: 1px solid #2a2a2a;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.sidebar-header {
-  margin-bottom: 8px;
+  gap: 12px;
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 8px 12px;
 }
 
-.new-chat {
-  background: #1f1f1f;
-  color: #fff;
-  border: 1px solid #333;
-  padding: 10px 14px;
+.new-btn {
+  background: #2a2a2a;
+  color: white;
+  border: none;
+  padding: 12px;
   border-radius: 8px;
-  width: 100%;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
 }
 
-.nav-item {
+.link {
   padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.nav-item:hover {
-  background: #1f1f1f;
+.link:hover {
+  background: #2a2a2a;
 }
 
-.main-content {
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.center-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  position: relative;
+  gap: 32px;
+  padding: 40px;
 }
 
-.hero {
-  text-align: center;
-  margin-bottom: 60px;
+.big-logo {
+  font-size: 80px;
 }
 
-.hero-logo {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.hero-title {
-  font-size: 28px;
+.title {
+  font-size: 32px;
   font-weight: 500;
-  color: #ddd;
+  text-align: center;
+  max-width: 500px;
 }
 
-.bottom-search {
-  width: 100%;
-  max-width: 720px;
-  margin-top: auto;
-  padding-bottom: 40px;
-}
-
-.search-container {
+.suggestions {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 700px;
+}
+
+.sugg-btn {
+  background: #1f1f1f;
+  border: 1px solid #333;
+  color: #ddd;
+  padding: 14px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.sugg-btn:hover {
+  background: #2a2a2a;
+  border-color: #555;
+}
+
+.bottom-bar {
+  padding: 20px;
+  background: #0f0f0f;
+  border-top: 1px solid #222;
+}
+
+.search-box {
+  max-width: 720px;
+  margin: 0 auto;
   background: #1f1f1f;
   border: 1px solid #333;
   border-radius: 9999px;
+  display: flex;
+  align-items: center;
   padding: 8px 12px;
   gap: 8px;
 }
 
-.search-input {
+.input {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
+  color: white;
   font-size: 16px;
-  padding: 8px 12px;
 }
 
-.send-btn, .mic-btn, .attach-btn {
+.icon-btn, .send-btn {
   background: none;
   border: none;
   color: #888;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
 }
 
-.send-btn:hover, .mic-btn:hover {
-  background: #333;
-  color: #fff;
+.send-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 8px 14px;
+  font-size: 18px;
 }
 
-.suggestions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 720px;
-  margin-top: 20px;
-}
-
-.suggestion {
-  background: #1f1f1f;
-  border: 1px solid #333;
-  color: #ccc;
-  padding: 10px 16px;
-  border-radius: 9999px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.suggestion:hover {
-  background: #2a2a2a;
-  color: #fff;
-}
-
-.hint {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin-top: 12px;
+.send-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
 }
