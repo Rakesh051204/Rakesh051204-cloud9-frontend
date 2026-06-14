@@ -1,42 +1,9 @@
-*, *::before, *::after {
-  box-sizing: border-box;
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
-
-:root {
-  --font-display: 'Sora', sans-serif;
-  --font-body: 'Inter', sans-serif;
-}
-
-html, body {
-  background: #f9fafb;
-  color: #111;
-  font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.6;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f0f0f0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 3px;
-}
-
-::selection {
-  background: #e8e8e8;
-  color: #111;
+body {
+  background: #0a0a0a;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }

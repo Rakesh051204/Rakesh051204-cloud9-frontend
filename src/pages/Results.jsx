@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import { supabase } from '../supabase'
 import './Results.css'
 
-const API_BASE = https://cloud9-api-2.onrender.com
+const API_BASE = 'https://cloud9-api-2.onrender.com'
 
 export default function Results() {
   const [searchParams] = useSearchParams()
@@ -22,20 +21,24 @@ export default function Results() {
 
   useEffect(() => {
     if (query) performSearch()
-    fetchHistory()
+    loadHistory()
   }, [query])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages])
 
-  const fetchHistory = async () => {
-    const { data } = await supabase
-      .from('searches')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(8)
-    if (data) setHistory(data)
+  const loadHistory = () => {
+    // Optional: you can re-enable supabase later, but for now use localStorage
+    const stored = localStorage.getItem('cloud9_history')
+    if (stored) setHistory(JSON.parse(stored))
+  }
+
+  const saveToHistory = (q, ans) => {
+    const newEntry = { id: Date.now(), query: q, answer: ans, created_at: new Date().toISOString() }
+    const updated = [newEntry, ...history.slice(0, 7)]
+    setHistory(updated)
+    localStorage.setItem('cloud9_history', JSON.stringify(updated))
   }
 
   const performSearch = async () => {
@@ -52,8 +55,7 @@ export default function Results() {
       if (!res.ok) throw new Error('Search failed')
       const data = await res.json()
       setAnswer(data.answer)
-      await supabase.from('searches').insert({ query, answer: data.answer })
-      fetchHistory()
+      saveToHistory(query, data.answer)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -76,7 +78,7 @@ export default function Results() {
       const data = await res.json()
       setChatMessages(prev => [...prev, { role: 'ai', text: data.answer }])
     } catch {
-      setChatMessages(prev => [...prev, { role: 'ai', text: 'Something went wrong.' }])
+      setChatMessages(prev => [...prev, { role: 'ai', text: 'Sorry, something went wrong.' }])
     } finally {
       setChatLoading(false)
     }
@@ -88,20 +90,14 @@ export default function Results() {
 
   return (
     <div className="results-page">
-
       <div className="sidebar">
         <button className="home-btn" onClick={() => navigate('/')}>
           ☁️ Cloud9
         </button>
-
         <div className="history-list">
           <p className="history-label">Recent</p>
           {history.map(item => (
-            <div
-              key={item.id}
-              className="history-item"
-              onClick={() => handleNewSearch(item.query)}
-            >
+            <div key={item.id} className="history-item" onClick={() => handleNewSearch(item.query)}>
               {item.query}
             </div>
           ))}
@@ -109,7 +105,6 @@ export default function Results() {
       </div>
 
       <div className="results-main">
-
         <div className="top-search">
           <span className="top-search-icon">🔍</span>
           <input
@@ -132,9 +127,7 @@ export default function Results() {
 
           {loading && (
             <div className="loading-state">
-              <div className="loading-bars">
-                <span /><span /><span /><span />
-              </div>
+              <div className="loading-bars"><span /><span /><span /><span /></div>
               <p>Thinking...</p>
             </div>
           )}
@@ -151,33 +144,23 @@ export default function Results() {
         {answer && !loading && (
           <div className="chat-section">
             <div className="chat-label">Follow-up</div>
-
             {chatMessages.length > 0 && (
               <div className="chat-messages">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`chat-msg${msg.role === 'user' ? ' chat-msg--user' : ''}`}>
-                    <div className="chat-msg-avatar">
-                      {msg.role === 'user' ? '🧑' : '☁️'}
-                    </div>
-                    <div className="chat-msg-content">
-                      <ReactMarkdown>{msg.text}</ReactMarkdown>
-                    </div>
+                    <div className="chat-msg-avatar">{msg.role === 'user' ? '🧑' : '☁️'}</div>
+                    <div className="chat-msg-content"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="chat-msg">
                     <div className="chat-msg-avatar">☁️</div>
-                    <div className="chat-msg-content">
-                      <div className="typing-dots">
-                        <span /><span /><span />
-                      </div>
-                    </div>
+                    <div className="chat-msg-content"><div className="typing-dots"><span /><span /><span /></div></div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
             )}
-
             <div className="chat-input-row">
               <input
                 className="chat-input"
@@ -186,17 +169,10 @@ export default function Results() {
                 onKeyDown={e => e.key === 'Enter' && handleChatSend()}
                 placeholder="Ask a follow-up..."
               />
-              <button
-                className="chat-send"
-                onClick={handleChatSend}
-                disabled={chatLoading || !chatInput.trim()}
-              >
-                ↑
-              </button>
+              <button className="chat-send" onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}>↑</button>
             </div>
           </div>
         )}
-
       </div>
     </div>
   )
