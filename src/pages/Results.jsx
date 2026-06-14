@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { supabase } from '../supabase'
+import './Results.css'
 
-const API_BASE = 'http://localhost:3001'
+const API_BASE = https://cloud9-api-2.onrender.com
 
 export default function Results() {
   const [searchParams] = useSearchParams()
@@ -14,163 +15,189 @@ export default function Results() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [history, setHistory] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const chatEndRef = useRef(null)
 
   useEffect(() => {
-    if (query) {
-      performSearch()
-    }
+    if (query) performSearch()
     fetchHistory()
   }, [query])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
 
   const fetchHistory = async () => {
     const { data } = await supabase
       .from('searches')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(8)
     if (data) setHistory(data)
   }
 
   const performSearch = async () => {
     setLoading(true)
+    setAnswer('')
     setError('')
-
+    setChatMessages([])
     try {
-      const response = await fetch(`${API_BASE}/ask`, {
+      const res = await fetch(`${API_BASE}/ask`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: query })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Search failed')
-      }
-
-      const data = await response.json()
+      if (!res.ok) throw new Error('Search failed')
+      const data = await res.json()
       setAnswer(data.answer)
-
-      // Save to Supabase
-      await supabase.from('searches').insert({
-        query: query,
-        answer: data.answer
-      })
-
+      await supabase.from('searches').insert({ query, answer: data.answer })
       fetchHistory()
-
     } catch (err) {
-      console.error('Search error:', err)
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleNewSearch = (e) => {
-    e.preventDefault()
-    const formData = new FormData(e.target)
-    const newQuery = formData.get('query')
-    if (newQuery?.trim()) {
-      navigate(`/search?q=${encodeURIComponent(newQuery.trim())}`)
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || chatLoading) return
+    const userMsg = chatInput.trim()
+    setChatInput('')
+    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }])
+    setChatLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: `Context: ${answer}\n\nFollow-up: ${userMsg}` })
+      })
+      const data = await res.json()
+      setChatMessages(prev => [...prev, { role: 'ai', text: data.answer }])
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'ai', text: 'Something went wrong.' }])
+    } finally {
+      setChatLoading(false)
     }
   }
 
+  const handleNewSearch = (q) => {
+    if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
+  }
+
   return (
-    <div style={{ display: 'flex', maxWidth: '1100px', margin: '0 auto', padding: '2rem', gap: '2rem' }}>
-      
-      {/* Left - Main Content */}
-      <div style={{ flex: 1 }}>
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#4f8eff',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            marginBottom: '2rem'
-          }}
-        >
-          ← Back to Search
+    <div className="results-page">
+
+      <div className="sidebar">
+        <button className="home-btn" onClick={() => navigate('/')}>
+          ☁️ Cloud9
         </button>
 
-        <form onSubmit={handleNewSearch} style={{ marginBottom: '2rem' }}>
+        <div className="history-list">
+          <p className="history-label">Recent</p>
+          {history.map(item => (
+            <div
+              key={item.id}
+              className="history-item"
+              onClick={() => handleNewSearch(item.query)}
+            >
+              {item.query}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="results-main">
+
+        <div className="top-search">
+          <span className="top-search-icon">🔍</span>
           <input
-            name="query"
+            className="top-search-input"
             defaultValue={query}
+            onKeyDown={e => e.key === 'Enter' && handleNewSearch(e.target.value)}
             placeholder="Ask anything..."
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              background: '#0d1b35',
-              border: '1px solid #1e3058',
-              borderRadius: '8px',
-              color: 'white'
-            }}
           />
-        </form>
+        </div>
 
-        <h2 style={{ color: 'white', marginBottom: '1rem' }}>{query}</h2>
+        <div className="query-header">
+          <h1 className="query-title">{query}</h1>
+        </div>
 
-        {loading && (
-          <div style={{ color: '#8b9ac0', padding: '2rem', textAlign: 'center' }}>
-            🤔 Thinking...
+        <div className="answer-card">
+          <div className="answer-label">
+            <div className="ai-dot" />
+            Cloud9 Answer
           </div>
-        )}
 
-        {error && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            padding: '1rem',
-            color: '#fca5a5'
-          }}>
-            ⚠️ Error: {error}
-          </div>
-        )}
+          {loading && (
+            <div className="loading-state">
+              <div className="loading-bars">
+                <span /><span /><span /><span />
+              </div>
+              <p>Thinking...</p>
+            </div>
+          )}
+
+          {error && <div className="error-state">⚠️ {error}</div>}
+
+          {answer && !loading && (
+            <div className="answer-body">
+              <ReactMarkdown>{answer}</ReactMarkdown>
+            </div>
+          )}
+        </div>
 
         {answer && !loading && (
-          <div style={{
-            background: '#111e3a',
-            border: '1px solid #1e3058',
-            borderRadius: '14px',
-            padding: '1.5rem',
-            color: '#f0f4ff'
-          }}>
-            <ReactMarkdown>{answer}</ReactMarkdown>
+          <div className="chat-section">
+            <div className="chat-label">Follow-up</div>
+
+            {chatMessages.length > 0 && (
+              <div className="chat-messages">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`chat-msg${msg.role === 'user' ? ' chat-msg--user' : ''}`}>
+                    <div className="chat-msg-avatar">
+                      {msg.role === 'user' ? '🧑' : '☁️'}
+                    </div>
+                    <div className="chat-msg-content">
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="chat-msg">
+                    <div className="chat-msg-avatar">☁️</div>
+                    <div className="chat-msg-content">
+                      <div className="typing-dots">
+                        <span /><span /><span />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+
+            <div className="chat-input-row">
+              <input
+                className="chat-input"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleChatSend()}
+                placeholder="Ask a follow-up..."
+              />
+              <button
+                className="chat-send"
+                onClick={handleChatSend}
+                disabled={chatLoading || !chatInput.trim()}
+              >
+                ↑
+              </button>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Right - Search History */}
-      <div style={{ width: '250px' }}>
-        <h3 style={{ color: '#8b9ac0', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          🕐 Recent Searches
-        </h3>
-        {history.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => navigate(`/search?q=${encodeURIComponent(item.query)}`)}
-            style={{
-              background: '#111e3a',
-              border: '1px solid #1e3058',
-              borderRadius: '8px',
-              padding: '0.75rem',
-              marginBottom: '0.5rem',
-              cursor: 'pointer',
-              color: '#c0cfff',
-              fontSize: '0.85rem'
-            }}
-          >
-            {item.query}
-          </div>
-        ))}
       </div>
-
     </div>
   )
 }
