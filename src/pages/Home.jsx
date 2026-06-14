@@ -1,72 +1,89 @@
-import { useNavigate } from 'react-router-dom'
-import SearchBar from '../components/SearchBar'
-import './Home.css'
-
-const suggestions = [
-  'Latest AI breakthroughs 2026',
-  'Best programming languages to learn',
-  'How does quantum computing work',
-  'Top startups in India 2026',
-]
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Home.css';
 
 export default function Home() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [input, setInput] = useState('');
 
   const handleSearch = (query) => {
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query.trim())}`)
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     }
-  }
+  };
+
+  const suggestions = [
+    "What is quantum computing?",
+    "Latest AI breakthroughs 2026",
+    "Best programming languages to learn",
+    "Explain how Grok works",
+  ];
 
   return (
-    <div className="home">
-      <div className="home-bg">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
+    <div className="grok-layout">
+      {/* Left Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <div className="logo">☁️ Cloud9</div>
+          <button className="new-chat" onClick={() => navigate('/')}>
+            + New Search
+          </button>
+        </div>
+
+        <div className="sidebar-section">
+          <div className="section-title">Modes</div>
+          <div className="nav-item" onClick={() => navigate('/image')}>🖼️ Image Generation</div>
+          <div className="nav-item" onClick={() => navigate('/avatar')}>🧑‍🎨 AI Avatar</div>
+          <div className="nav-item" onClick={() => handleSearch('Write Python code for')}>💻 Code Studio</div>
+        </div>
+
+        <div className="sidebar-bottom">
+          <div className="user-info">👤 Rakesh Palani</div>
+        </div>
       </div>
-      <div className="home-content">
-        <div className="logo">
-          <div className="logo-icon">☁️</div>
-          <h1 className="logo-text">Cloud9</h1>
+
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="hero">
+          <div className="hero-logo">☁️</div>
+          <h1 className="hero-title">What can I help you with today?</h1>
         </div>
-        <p className="tagline">Search the web. Get answers. Instantly.</p>
-        <div className="search-wrap">
-          <SearchBar onSearch={handleSearch} size="large" />
-        </div>
-        <div style={{display:'flex',gap:'1rem',justifyContent:'center',marginTop:'2rem',flexWrap:'wrap'}}>
-          <button onClick={() => navigate('/image')} style={{padding:'0.75rem 1.5rem',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',border:'none',borderRadius:'12px',color:'white',cursor:'pointer',fontSize:'0.95rem',fontWeight:'bold'}}>
-            Image Generation
-          </button>
-          <button onClick={() => navigate('/avatar')} style={{padding:'0.75rem 1.5rem',background:'linear-gradient(135deg,#f59e0b,#f97316)',border:'none',borderRadius:'12px',color:'white',cursor:'pointer',fontSize:'0.95rem',fontWeight:'bold'}}>
-            AI Avatar
-          </button>
-          <button onClick={() => handleSearch('Write me a Python code')} style={{padding:'0.75rem 1.5rem',background:'linear-gradient(135deg,#0ea5e9,#06b6d4)',border:'none',borderRadius:'12px',color:'white',cursor:'pointer',fontSize:'0.95rem',fontWeight:'bold'}}>
-            Code Studio
-          </button>
-          <button onClick={() => handleSearch('Research latest AI trends 2026')} style={{padding:'0.75rem 1.5rem',background:'linear-gradient(135deg,#f59e0b,#ef4444)',border:'none',borderRadius:'12px',color:'white',cursor:'pointer',fontSize:'0.95rem',fontWeight:'bold'}}>
-            Research
-          </button>
-          <button onClick={() => handleSearch('Discover knowledge about universe')} style={{padding:'0.75rem 1.5rem',background:'linear-gradient(135deg,#10b981,#059669)',border:'none',borderRadius:'12px',color:'white',cursor:'pointer',fontSize:'0.95rem',fontWeight:'bold'}}>
-            Knowledge
-          </button>
-        </div>
-        <div className="suggestions">
-          <span className="suggestions-label">Try asking:</span>
-          <div className="suggestion-pills">
-            {suggestions.map((s) => (
-              <button key={s} className="pill" onClick={() => handleSearch(s)}>
-                {s}
-              </button>
-            ))}
+
+        {/* Bottom Search Bar (Grok Style) */}
+        <div className="bottom-search">
+          <div className="search-container">
+            <button className="attach-btn">＋</button>
+            
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(input)}
+              placeholder="Ask anything..."
+              className="search-input"
+            />
+
+            <button className="mic-btn">🎤</button>
+            <button 
+              className="send-btn"
+              onClick={() => handleSearch(input)}
+              disabled={!input.trim()}
+            >
+              ↑
+            </button>
           </div>
+          <p className="hint">Cloud9 can make mistakes. Verify important information.</p>
+        </div>
+
+        {/* Suggestions */}
+        <div className="suggestions">
+          {suggestions.map((s, i) => (
+            <button key={i} className="suggestion" onClick={() => handleSearch(s)}>
+              {s}
+            </button>
+          ))}
         </div>
       </div>
-      <footer className="home-footer">
-        <span>Cloud9 · AI-powered search</span>
-        <span className="footer-dot">·</span>
-        <span>Built by Rakesh Palani</span>
-      </footer>
     </div>
-  )
+  );
 }

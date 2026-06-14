@@ -1,37 +1,148 @@
-.home {
+.grok-layout {
+  display: flex;
   min-height: 100vh;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.sidebar {
+  width: 260px;
+  background: #111;
+  border-right: 1px solid #222;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-header {
+  margin-bottom: 8px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.new-chat {
+  background: #1f1f1f;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 10px 14px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.nav-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.nav-item:hover {
+  background: #1f1f1f;
+}
+
+.main-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 20px;
   position: relative;
-  overflow: hidden;
-  padding: 2rem;
 }
 
-.home-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
+.hero {
+  text-align: center;
+  margin-bottom: 60px;
 }
 
-.orb {
-  position: absolute;
+.hero-logo {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 500;
+  color: #ddd;
+}
+
+.bottom-search {
+  width: 100%;
+  max-width: 720px;
+  margin-top: auto;
+  padding-bottom: 40px;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  background: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 9999px;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 16px;
+  padding: 8px 12px;
+}
+
+.send-btn, .mic-btn, .attach-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.25;
 }
 
-.orb-1 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, #2563eb, transparent);
-  top: -100px;
-  left: -100px;
-  animation: drift 12s ease-in-out infinite alternate;
+.send-btn:hover, .mic-btn:hover {
+  background: #333;
+  color: #fff;
 }
 
-.orb-2 {
-  width: 400px;
-  height: 400px;
+.suggestions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 720px;
+  margin-top: 20px;
+}
+
+.suggestion {
+  background: #1f1f1f;
+  border: 1px solid #333;
+  color: #ccc;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.hint {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 12px;
+}
