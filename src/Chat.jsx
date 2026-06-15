@@ -200,7 +200,7 @@ export default function Chat() {
   const handleDownload = (url) => {
     const link = document.createElement('a')
     link.href = url
-    link.download = 'cloud9-image.png'
+    link.download = 'stoic-image.png'
     link.target = '_blank'
     link.click()
   }
@@ -228,7 +228,7 @@ export default function Chat() {
         {messages.length === 0 ? (
           <div className="welcome">
             <div className="welcome-logo">☁️</div>
-            <h1>Cloud9 AI</h1>
+            <h1>Stoic</h1>
             <p>Search, generate images, create avatars, and more</p>
             <div className="suggestions">
               {SUGGESTIONS.map((s) => (
