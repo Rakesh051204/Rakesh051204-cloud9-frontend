@@ -90,6 +90,42 @@ export default function Results() {
     if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
   }
 
+  // Function to render answer with clickable citation badges
+  const renderAnswerWithCitations = (text) => {
+    // Match patterns like [1], [2], [3] but not URLs
+    const citationRegex = /\[(\d+)\]/g
+    const parts = []
+    let lastIndex = 0
+    let match
+
+    while ((match = citationRegex.exec(text)) !== null) {
+      // Add text before the citation
+      if (match.index > lastIndex) {
+        parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>)
+      }
+      const citationNum = parseInt(match[1])
+      // Find the source
+      const source = sources.find((_, idx) => idx + 1 === citationNum)
+      if (source) {
+        parts.push(
+          <sup key={`cite-${match.index}`} className="citation-badge">
+            <a href={source.url} target="_blank" rel="noreferrer" title={source.title}>
+              [{citationNum}]
+            </a>
+          </sup>
+        )
+      } else {
+        parts.push(<sup key={`cite-${match.index}`}>[{citationNum}]</sup>)
+      }
+      lastIndex = match.index + match[0].length
+    }
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(<span key="text-end">{text.slice(lastIndex)}</span>)
+    }
+    return parts
+  }
+
   return (
     <div className="results-page">
       <div className="sidebar">
@@ -150,7 +186,20 @@ export default function Results() {
 
           {answer && !loading && (
             <div className="answer-body">
-              <ReactMarkdown>{answer}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  // Override paragraph to handle inline citations
+                  p: ({node, children}) => {
+                    // If children is a string, parse it
+                    if (typeof children === 'string') {
+                      return <p>{renderAnswerWithCitations(children)}</p>
+                    }
+                    return <p>{children}</p>
+                  }
+                }}
+              >
+                {answer}
+              </ReactMarkdown>
             </div>
           )}
         </div>
