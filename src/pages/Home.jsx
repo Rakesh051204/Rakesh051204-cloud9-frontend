@@ -1,4 +1,4 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "./Home.css"
 
@@ -20,19 +20,19 @@ export default function Home() {
   return (
     <div className="home-grok">
       <div className="sidebar">
-        <div className="logo">? Stoic</div>
+        <div className="logo">Stoic</div>
         <button className="new-chat" onClick={() => navigate("/")}>+ New Chat</button>
         <div className="nav-items">
-          <div className="nav-item" onClick={() => handleSearch("Generate image of")}>??? Image</div>
-          <div className="nav-item" onClick={() => handleSearch("Create avatar as")}>?? Avatar</div>
-          <div className="nav-item" onClick={() => handleSearch("Write code for")}>?? Code</div>
+          <div className="nav-item" onClick={() => handleSearch("Generate image of")}>Image</div>
+          <div className="nav-item" onClick={() => handleSearch("Create avatar as")}>Avatar</div>
+          <div className="nav-item" onClick={() => handleSearch("Write code for")}>Code</div>
         </div>
       </div>
       <div className="main-area">
         <div className="hero">
-          <div className="hero-badge">? Powered by AI + Live Web Search</div>
+          <div className="hero-badge">Powered by AI + Live Web Search</div>
           <h1>Think clearly.<br/>Search deeply.</h1>
-          <p>Get instant answers with real sources, images, and AI reasoning � all in one place.</p>
+          <p>Get instant answers with real sources, images, and AI reasoning — all in one place.</p>
         </div>
         <div className="search-container">
           <div className="search-box">
@@ -44,8 +44,7 @@ export default function Home() {
               placeholder="Ask anything..."
               autoFocus
             />
-            <button className="mic">??</button>
-            <button className="send" onClick={() => handleSearch(input)}>?</button>
+            <button className="send" onClick={() => handleSearch(input)}>Go</button>
           </div>
         </div>
         <div className="suggestions-bar">
