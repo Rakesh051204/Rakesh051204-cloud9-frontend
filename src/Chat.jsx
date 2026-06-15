@@ -200,7 +200,7 @@ export default function Chat() {
   const handleDownload = (url) => {
     const link = document.createElement('a')
     link.href = url
-    link.download = 'stoic-image.png'
+    link.download = 'Stoic-image.png'
     link.target = '_blank'
     link.click()
   }
