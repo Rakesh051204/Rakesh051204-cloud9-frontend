@@ -108,7 +108,7 @@ export default function Results() {
 
       <div className="results-main">
         <div className="top-search">
-          <span className="top-search-icon">??</span>
+          <span className="top-search-icon">Stoic</span>
           <input
             className="top-search-input"
             defaultValue={query}
@@ -123,7 +123,7 @@ export default function Results() {
 
         {sources.length > 0 && (
           <div className="sources-card">
-            <div className="sources-label">?? Sources</div>
+            <div className="sources-label">Stoic Sources</div>
             <div className="sources-list">
               {sources.map(s => (
                 <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="source-item">
@@ -148,7 +148,7 @@ export default function Results() {
             </div>
           )}
 
-          {error && <div className="error-state">?? {error}</div>}
+          {error && <div className="error-state">Stoic {error}</div>}
 
           {answer && !loading && (
             <div className="answer-body">
@@ -164,7 +164,7 @@ export default function Results() {
               <div className="chat-messages">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`chat-msg${msg.role === 'user' ? ' chat-msg--user' : ''}`}>
-                    <div className="chat-msg-avatar">{msg.role === 'user' ? '??' : '?'}</div>
+                    <div className="chat-msg-avatar">{msg.role === 'user' ? 'Stoic' : '?'}</div>
                     <div className="chat-msg-content"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
                   </div>
                 ))}
