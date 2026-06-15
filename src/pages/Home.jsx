@@ -60,13 +60,11 @@ export default function Home() {
 
       <div className="main-area">
         {!answer && !loading && (
-          <>
-            <div className="hero">
-              <div className="hero-badge">Powered by AI + Live Web Search</div>
-              <h1>Think clearly.<br/>Search deeply.</h1>
-              <p>Get instant answers with real sources and AI reasoning.</p>
-            </div>
-          </>
+          <div className="hero">
+            <div className="hero-badge">Powered by AI + Live Web Search</div>
+            <h1>Think clearly.<br/>Search deeply.</h1>
+            <p>Get instant answers with real sources and AI reasoning.</p>
+          </div>
         )}
 
         <div className="search-container">
@@ -90,23 +88,41 @@ export default function Home() {
           </div>
         )}
 
-        {loading && (
-          <div style={{ color: '#888', padding: '2rem 0' }}>🔍 Searching the web...</div>
-        )}
-
-        {error && <p style={{ color: '#f87171' }}>Error: {error}</p>}
+        {loading && <div style={{color:'#888',padding:'2rem 0'}}>🔍 Searching the web...</div>}
+        {error && <p style={{color:'#f87171'}}>Error: {error}</p>}
 
         {answer && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <h2 style={{ color: '#fff', marginBottom: '1rem' }}>{query}</h2>
+          <div style={{marginTop:'1.5rem'}}>
+            <h2 style={{color:'#fff',marginBottom:'1rem'}}>{query}</h2>
 
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', lineHeight: '1.8', marginBottom: '1.5rem', whiteSpace: 'pre-wrap', color: '#fff' }}>
+            <div style={{background:'#111',border:'1px solid #222',borderRadius:'12px',padding:'1.5rem',lineHeight:'1.8',marginBottom:'1.5rem',whiteSpace:'pre-wrap',color:'#fff'}}>
               {answer}
             </div>
 
             {sources.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ color: '#888', fontSize: '0.85rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sources</h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{marginBottom:'1.5rem'}}>
+                <h3 style={{color:'#888',fontSize:'0.85rem',marginBottom:'0.75rem',textTransform:'uppercase',letterSpacing:'0.1em'}}>Sources</h3>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'0.5rem'}}>
                   {sources.map((s, i) => (
-                    <a key={i} href={s.url}
+                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{background:'#1a1a1a',border:'1px solid #333',borderRadius:'8px',padding:'0.5rem 0.75rem',color:'#a5b4fc',fontSize:'0.85rem',textDecoration:'none'}}>[{i+1}] {s.title}</a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {related.length > 0 && (
+              <div>
+                <h3 style={{color:'#888',fontSize:'0.85rem',marginBottom:'0.75rem',textTransform:'uppercase',letterSpacing:'0.1em'}}>Related</h3>
+                <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+                  {related.map((q, i) => (
+                    <button key={i} onClick={() => { setInput(q); handleSearch(q) }} style={{background:'#1a1a1a',border:'1px solid #333',borderRadius:'8px',padding:'0.75rem 1rem',color:'#fff',fontSize:'0.9rem',textAlign:'left',cursor:'pointer'}}>{q}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
