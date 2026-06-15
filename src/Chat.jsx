@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './Chat.css'
 
-const API_BASE = 'https://cloud9-api-2.up.railway.app';
+const API_BASE = 'https://cloud9-api-2.onrender.com';
 
 const SUGGESTIONS = [
   'What is quantum computing?',
