@@ -11,6 +11,7 @@ export default function Results() {
   const query = searchParams.get('q') || ''
 
   const [answer, setAnswer] = useState('')
+  const [sources, setSources] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [history, setHistory] = useState([])
@@ -29,7 +30,6 @@ export default function Results() {
   }, [chatMessages])
 
   const loadHistory = () => {
-    // Optional: you can re-enable supabase later, but for now use localStorage
     const stored = localStorage.getItem('stoic_history')
     if (stored) setHistory(JSON.parse(stored))
   }
@@ -44,10 +44,11 @@ export default function Results() {
   const performSearch = async () => {
     setLoading(true)
     setAnswer('')
+    setSources([])
     setError('')
     setChatMessages([])
     try {
-      const res = await fetch(`${API_BASE}/ask`, {
+      const res = await fetch(`${API_BASE}/ask-with-web`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query })
@@ -55,6 +56,7 @@ export default function Results() {
       if (!res.ok) throw new Error('Search failed')
       const data = await res.json()
       setAnswer(data.answer)
+      setSources(data.sources || [])
       saveToHistory(query, data.answer)
     } catch (err) {
       setError(err.message)
@@ -70,7 +72,7 @@ export default function Results() {
     setChatMessages(prev => [...prev, { role: 'user', text: userMsg }])
     setChatLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/ask`, {
+      const res = await fetch(`${API_BASE}/ask-with-web`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: `Context: ${answer}\n\nFollow-up: ${userMsg}` })
@@ -92,7 +94,7 @@ export default function Results() {
     <div className="results-page">
       <div className="sidebar">
         <button className="home-btn" onClick={() => navigate('/')}>
-          ☁️ Stoic
+          ? Stoic
         </button>
         <div className="history-list">
           <p className="history-label">Recent</p>
@@ -106,7 +108,7 @@ export default function Results() {
 
       <div className="results-main">
         <div className="top-search">
-          <span className="top-search-icon">🔍</span>
+          <span className="top-search-icon">??</span>
           <input
             className="top-search-input"
             defaultValue={query}
@@ -119,6 +121,20 @@ export default function Results() {
           <h1 className="query-title">{query}</h1>
         </div>
 
+        {sources.length > 0 && (
+          <div className="sources-card">
+            <div className="sources-label">?? Sources</div>
+            <div className="sources-list">
+              {sources.map(s => (
+                <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="source-item">
+                  <span className="source-num">{s.id}</span>
+                  <span className="source-title">{s.title}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="answer-card">
           <div className="answer-label">
             <div className="ai-dot" />
@@ -128,11 +144,11 @@ export default function Results() {
           {loading && (
             <div className="loading-state">
               <div className="loading-bars"><span /><span /><span /><span /></div>
-              <p>Thinking...</p>
+              <p>Searching the web...</p>
             </div>
           )}
 
-          {error && <div className="error-state">⚠️ {error}</div>}
+          {error && <div className="error-state">?? {error}</div>}
 
           {answer && !loading && (
             <div className="answer-body">
@@ -148,13 +164,13 @@ export default function Results() {
               <div className="chat-messages">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`chat-msg${msg.role === 'user' ? ' chat-msg--user' : ''}`}>
-                    <div className="chat-msg-avatar">{msg.role === 'user' ? '🧑' : '☁️'}</div>
+                    <div className="chat-msg-avatar">{msg.role === 'user' ? '??' : '?'}</div>
                     <div className="chat-msg-content"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="chat-msg">
-                    <div className="chat-msg-avatar">☁️</div>
+                    <div className="chat-msg-avatar">?</div>
                     <div className="chat-msg-content"><div className="typing-dots"><span /><span /><span /></div></div>
                   </div>
                 )}
@@ -169,7 +185,7 @@ export default function Results() {
                 onKeyDown={e => e.key === 'Enter' && handleChatSend()}
                 placeholder="Ask a follow-up..."
               />
-              <button className="chat-send" onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}>↑</button>
+              <button className="chat-send" onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}>?</button>
             </div>
           </div>
         )}
