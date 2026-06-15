@@ -117,4 +117,4 @@
 .search-box button.send {
   background: #3b82f6;
   color: white;
-}
+}@media (max-width: 768px) { .home-grok { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; align-items: center; padding: 10px 16px; gap: 12px; border-right: none; border-bottom: 1px solid #222; overflow-x: auto; } .logo { font-size: 18px; white-space: nowrap; } .new-chat { white-space: nowrap; padding: 8px 12px; font-size: 13px; width: auto; } .nav-items { display: flex; flex-direction: row; gap: 8px; } .nav-item { white-space: nowrap; font-size: 13px; padding: 6px 10px; } .main-area { padding: 20px 16px; padding-top: 40px; justify-content: flex-start; } .hero-icon { font-size: 40px; } .hero h1 { font-size: 22px; } .suggestions-bar { gap: 8px; margin-bottom: 30px; } .sugg-btn { padding: 8px 14px; font-size: 13px; } .bottom-search { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: #0a0a0a; border-top: 1px solid #222; max-width: 100%; } }
