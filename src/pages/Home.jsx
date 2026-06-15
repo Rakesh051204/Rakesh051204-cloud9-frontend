@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import "./Home.css"
 
 const API_BASE = 'https://cloud9-api-2.onrender.com'
@@ -11,6 +11,7 @@ export default function Home() {
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const answerRef = useRef(null)
 
   const handleSearch = (q) => {
     const searchQuery = q || input
@@ -32,6 +33,7 @@ export default function Home() {
         setSources(data.sources || [])
         setRelated(data.relatedQuestions || [])
         setLoading(false)
+        setTimeout(() => answerRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
       })
       .catch(err => {
         setError(err.message)
@@ -92,7 +94,7 @@ export default function Home() {
         {error && <p style={{color:'#f87171'}}>Error: {error}</p>}
 
         {answer && (
-          <div style={{marginTop:'1.5rem'}}>
+          <div ref={answerRef} style={{marginTop:'1.5rem'}}>
             <h2 style={{color:'#fff',marginBottom:'1rem'}}>{query}</h2>
 
             <div style={{background:'#111',border:'1px solid #222',borderRadius:'12px',padding:'1.5rem',lineHeight:'1.8',marginBottom:'1.5rem',whiteSpace:'pre-wrap',color:'#fff'}}>
