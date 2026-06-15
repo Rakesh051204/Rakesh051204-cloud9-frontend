@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import ReactMarkdown from 'react-markdown'
 import './Results.css'
 
 const API_BASE = 'https://cloud9-api-2.onrender.com'
@@ -90,45 +89,20 @@ export default function Results() {
     if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
   }
 
-  // Convert plain text with [1] citations into JSX with clickable badges
-  const formatAnswerWithCitations = (text) => {
-    const regex = /\[(\d+)\]/g
-    const parts = []
-    let lastIndex = 0
-    let match
-
-    while ((match = regex.exec(text)) !== null) {
-      // Add text before the citation
-      if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index))
+  // Convert answer text to HTML with clickable citation badges
+  const formatAnswerHtml = (text, sourcesList) => {
+    if (!text) return ''
+    // Replace [1], [2] etc with clickable badge HTML
+    let html = text.replace(/\[(\d+)\]/g, (match, num) => {
+      const idx = parseInt(num) - 1
+      if (sourcesList[idx]) {
+        return `<sup class="citation-badge"><a href="${sourcesList[idx].url}" target="_blank" rel="noreferrer" title="${sourcesList[idx].title.replace(/"/g, '&quot;')}">[${num}]</a></sup>`
       }
-      const citationNum = parseInt(match[1])
-      // Check if source exists (index from 1)
-      const source = sources.find((_, idx) => idx + 1 === citationNum)
-      if (source) {
-        parts.push(
-          <sup key={match.index} className="citation-badge">
-            <a href={source.url} target="_blank" rel="noreferrer" title={source.title}>
-              [{citationNum}]
-            </a>
-          </sup>
-        )
-      } else {
-        parts.push(`[${citationNum}]`)
-      }
-      lastIndex = match.index + match[0].length
-    }
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex))
-    }
-    // Convert string parts to proper React nodes
-    return parts.map((part, idx) => {
-      if (typeof part === 'string') {
-        // Split string by newlines and wrap paragraphs if needed
-        return <span key={idx}>{part}</span>
-      }
-      return part
+      return match
     })
+    // Convert newlines to paragraphs
+    html = html.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join('')
+    return html
   }
 
   return (
@@ -190,16 +164,10 @@ export default function Results() {
           {error && <div className="error-state">{error}</div>}
 
           {answer && !loading && (
-            <div className="answer-body">
-              {answer.split('\n').map((paragraph, idx) => {
-                if (paragraph.trim() === '') return null
-                return (
-                  <p key={idx}>
-                    {formatAnswerWithCitations(paragraph)}
-                  </p>
-                )
-              })}
-            </div>
+            <div 
+              className="answer-body"
+              dangerouslySetInnerHTML={{ __html: formatAnswerHtml(answer, sources) }}
+            />
           )}
         </div>
 
@@ -212,7 +180,7 @@ export default function Results() {
                   <div key={i} className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : ''}`}>
                     <div className="chat-msg-avatar">{msg.role === 'user' ? 'You' : 'AI'}</div>
                     <div className="chat-msg-content">
-                      {msg.text.split('\n').map((p, j) => p.trim() && <p key={j}>{formatAnswerWithCitations(p)}</p>)}
+                      <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br/>') }} />
                     </div>
                   </div>
                 ))}

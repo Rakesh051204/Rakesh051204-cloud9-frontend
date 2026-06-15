@@ -455,3 +455,39 @@ body, html, #root {
   vertical-align: baseline;
   top: -0.4em;
 }
+
+/* Perplexity-style clickable citation badges - guaranteed working */
+.citation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a2a4a;
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin: 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.citation-badge a {
+  color: #4f8eff;
+  text-decoration: none;
+}
+
+.citation-badge:hover {
+  background-color: #2a3a6a;
+  transform: translateY(-1px);
+}
+
+.citation-badge a:hover {
+  text-decoration: underline;
+}
+
+.answer-body p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
