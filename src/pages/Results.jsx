@@ -90,40 +90,45 @@ export default function Results() {
     if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
   }
 
-  // Function to render answer with clickable citation badges
-  const renderAnswerWithCitations = (text) => {
-    // Match patterns like [1], [2], [3] but not URLs
-    const citationRegex = /\[(\d+)\]/g
+  // Convert plain text with [1] citations into JSX with clickable badges
+  const formatAnswerWithCitations = (text) => {
+    const regex = /\[(\d+)\]/g
     const parts = []
     let lastIndex = 0
     let match
 
-    while ((match = citationRegex.exec(text)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
       // Add text before the citation
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>)
+        parts.push(text.slice(lastIndex, match.index))
       }
       const citationNum = parseInt(match[1])
-      // Find the source
+      // Check if source exists (index from 1)
       const source = sources.find((_, idx) => idx + 1 === citationNum)
       if (source) {
         parts.push(
-          <sup key={`cite-${match.index}`} className="citation-badge">
+          <sup key={match.index} className="citation-badge">
             <a href={source.url} target="_blank" rel="noreferrer" title={source.title}>
               [{citationNum}]
             </a>
           </sup>
         )
       } else {
-        parts.push(<sup key={`cite-${match.index}`}>[{citationNum}]</sup>)
+        parts.push(`[${citationNum}]`)
       }
       lastIndex = match.index + match[0].length
     }
-    // Add remaining text
     if (lastIndex < text.length) {
-      parts.push(<span key="text-end">{text.slice(lastIndex)}</span>)
+      parts.push(text.slice(lastIndex))
     }
-    return parts
+    // Convert string parts to proper React nodes
+    return parts.map((part, idx) => {
+      if (typeof part === 'string') {
+        // Split string by newlines and wrap paragraphs if needed
+        return <span key={idx}>{part}</span>
+      }
+      return part
+    })
   }
 
   return (
@@ -186,20 +191,14 @@ export default function Results() {
 
           {answer && !loading && (
             <div className="answer-body">
-              <ReactMarkdown
-                components={{
-                  // Override paragraph to handle inline citations
-                  p: ({node, children}) => {
-                    // If children is a string, parse it
-                    if (typeof children === 'string') {
-                      return <p>{renderAnswerWithCitations(children)}</p>
-                    }
-                    return <p>{children}</p>
-                  }
-                }}
-              >
-                {answer}
-              </ReactMarkdown>
+              {answer.split('\n').map((paragraph, idx) => {
+                if (paragraph.trim() === '') return null
+                return (
+                  <p key={idx}>
+                    {formatAnswerWithCitations(paragraph)}
+                  </p>
+                )
+              })}
             </div>
           )}
         </div>
@@ -212,7 +211,9 @@ export default function Results() {
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : ''}`}>
                     <div className="chat-msg-avatar">{msg.role === 'user' ? 'You' : 'AI'}</div>
-                    <div className="chat-msg-content"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
+                    <div className="chat-msg-content">
+                      {msg.text.split('\n').map((p, j) => p.trim() && <p key={j}>{formatAnswerWithCitations(p)}</p>)}
+                    </div>
                   </div>
                 ))}
                 {chatLoading && (
