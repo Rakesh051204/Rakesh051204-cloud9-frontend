@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import './Results.css'
 
-const API_BASE = 'https://cloud9-api-2.onrender.com'
+const API_BASE = 'https://Stoic-api-2.onrender.com'
 
 export default function Results() {
   const [searchParams] = useSearchParams()
@@ -30,7 +30,7 @@ export default function Results() {
 
   const loadHistory = () => {
     // Optional: you can re-enable supabase later, but for now use localStorage
-    const stored = localStorage.getItem('cloud9_history')
+    const stored = localStorage.getItem('stoic_history')
     if (stored) setHistory(JSON.parse(stored))
   }
 
@@ -38,7 +38,7 @@ export default function Results() {
     const newEntry = { id: Date.now(), query: q, answer: ans, created_at: new Date().toISOString() }
     const updated = [newEntry, ...history.slice(0, 7)]
     setHistory(updated)
-    localStorage.setItem('cloud9_history', JSON.stringify(updated))
+    localStorage.setItem('stoic_history', JSON.stringify(updated))
   }
 
   const performSearch = async () => {
@@ -92,7 +92,7 @@ export default function Results() {
     <div className="results-page">
       <div className="sidebar">
         <button className="home-btn" onClick={() => navigate('/')}>
-          ☁️ Cloud9
+          ☁️ Stoic
         </button>
         <div className="history-list">
           <p className="history-label">Recent</p>
@@ -122,7 +122,7 @@ export default function Results() {
         <div className="answer-card">
           <div className="answer-label">
             <div className="ai-dot" />
-            Cloud9 Answer
+            Stoic Answer
           </div>
 
           {loading && (

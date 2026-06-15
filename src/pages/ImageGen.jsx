@@ -44,7 +44,7 @@ export default function ImageGen() {
         </button>
 
         <h1 style={{ fontSize:'2rem', marginBottom:'0.5rem' }}>🎨 Image Generation</h1>
-        <p style={{ color:'#8b9ac0', marginBottom:'2rem' }}>Describe anything and Cloud9 will create it</p>
+        <p style={{ color:'#8b9ac0', marginBottom:'2rem' }}>Describe anything and Stoic will create it</p>
 
         <div style={{ display:'flex', gap:'1rem', marginBottom:'2rem' }}>
           <input

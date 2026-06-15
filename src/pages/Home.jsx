@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <div className="home-grok">
       <div className="sidebar">
-        <div className="logo">☁️ Cloud9</div>
+        <div className="logo">☁️ Stoic</div>
         <button className="new-chat" onClick={() => navigate('/')}>+ New Chat</button>
         <div className="nav-items">
           <div className="nav-item" onClick={() => handleSearch('Generate image of')}>🖼️ Image</div>

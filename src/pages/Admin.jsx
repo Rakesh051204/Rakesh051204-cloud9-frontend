@@ -77,7 +77,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-logo" onClick={() => navigate('/')}>
-          ☁️ <span>Cloud9 Admin</span>
+          ☁️ <span>Stoic Admin</span>
         </div>
         <nav className="admin-nav">
           <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>
