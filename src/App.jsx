@@ -12,7 +12,7 @@ export default function App() {
     setError("")
     setAnswer("")
     try {
-      const response = await fetch("https://cloud9-api-2.onrender.com/ask", {
+      const response = await fetch("https://Stoic-api-2.onrender.com/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: query.trim() })
