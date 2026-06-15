@@ -64,24 +64,16 @@ export default function App() {
 
         {answer && (
           <>
-            {/* Answer */}
             <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", whiteSpace: "pre-wrap", lineHeight: "1.8", marginBottom: "1.5rem" }}>
               {answer}
             </div>
 
-            {/* Sources */}
             {sources.length > 0 && (
               <div style={{ marginBottom: "1.5rem" }}>
                 <h3 style={{ color: "#888", fontSize: "0.85rem", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sources</h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {sources.map((s, i) => (
-                    
-                      key={i}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "#a5b4fc", fontSize: "0.85rem", textDecoration: "none" }}
-                    >
+                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "#a5b4fc", fontSize: "0.85rem", textDecoration: "none" }}>
                       [{i + 1}] {s.title}
                     </a>
                   ))}
@@ -89,17 +81,12 @@ export default function App() {
               </div>
             )}
 
-            {/* Related Questions */}
             {related.length > 0 && (
               <div>
                 <h3 style={{ color: "#888", fontSize: "0.85rem", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>Related</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   {related.map((q, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setQuery(q); handleSearch(q); }}
-                      style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", padding: "0.75rem 1rem", color: "#fff", fontSize: "0.9rem", textAlign: "left", cursor: "pointer" }}
-                    >
+                    <button key={i} onClick={() => { setQuery(q); handleSearch(q) }} style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", padding: "0.75rem 1rem", color: "#fff", fontSize: "0.9rem", textAlign: "left", cursor: "pointer" }}>
                       {q}
                     </button>
                   ))}
