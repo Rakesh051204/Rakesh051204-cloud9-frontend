@@ -51,7 +51,7 @@ export default function Home() {
   return (
     <div className="home-grok">
       <div className="sidebar">
-        <div className="logo">Cloud9</div>
+        <div className="logo">Stoic</div>
         <button className="new-chat" onClick={() => { setAnswer(""); setQuery(""); setInput("") }}>+ New Search</button>
         <div className="nav-items">
           <div className="nav-item" onClick={() => handleSearch("Generate image of")}>Image</div>
@@ -61,15 +61,15 @@ export default function Home() {
       </div>
 
       <div className="main-area">
-        {!answer && !loading && (
-          <div className="hero">
-            <div className="hero-badge">Powered by AI + Live Web Search</div>
-            <h1>Think clearly.<br/>Search deeply.</h1>
-            <p>Get instant answers with real sources and AI reasoning.</p>
-          </div>
-        )}
 
-        <div className="search-container">
+        {/* Search box always at top */}
+        <div style={{position:'sticky', top:0, background:'#0a0a0a', paddingTop:'1.5rem', paddingBottom:'1rem', zIndex:10}}>
+          {!answer && !loading && (
+            <div style={{textAlign:'center', marginBottom:'1.5rem'}}>
+              <h1 style={{fontSize:'2.5rem', margin:'0 0 0.5rem'}}>Stoic</h1>
+              <p style={{color:'#888', margin:0}}>Think clearly. Search deeply.</p>
+            </div>
+          )}
           <div className="search-box">
             <input
               value={input}
@@ -77,11 +77,13 @@ export default function Home() {
               onKeyDown={e => e.key === "Enter" && handleSearch(input)}
               placeholder="Ask anything..."
               autoFocus
+              style={{flex:1, padding:'0.75rem 1rem', borderRadius:'8px', border:'1px solid #333', background:'#111', color:'#fff', fontSize:'1rem'}}
             />
             <button className="send" onClick={() => handleSearch(input)}>Go</button>
           </div>
         </div>
 
+        {/* Suggestions - only on home */}
         {!answer && !loading && (
           <div className="suggestions-bar">
             {suggestions.map((s, i) => (
@@ -90,23 +92,27 @@ export default function Home() {
           </div>
         )}
 
-        {loading && <div style={{color:'#888',padding:'2rem 0'}}>🔍 Searching the web...</div>}
+        {/* Loading */}
+        {loading && <div style={{color:'#888', padding:'2rem 0'}}>🔍 Searching the web...</div>}
+
+        {/* Error */}
         {error && <p style={{color:'#f87171'}}>Error: {error}</p>}
 
+        {/* Answer below search box */}
         {answer && (
-          <div ref={answerRef} style={{marginTop:'1.5rem'}}>
-            <h2 style={{color:'#fff',marginBottom:'1rem'}}>{query}</h2>
+          <div ref={answerRef} style={{marginTop:'1rem'}}>
+            <h2 style={{color:'#fff', marginBottom:'1rem'}}>{query}</h2>
 
-            <div style={{background:'#111',border:'1px solid #222',borderRadius:'12px',padding:'1.5rem',lineHeight:'1.8',marginBottom:'1.5rem',whiteSpace:'pre-wrap',color:'#fff'}}>
+            <div style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'1.5rem', lineHeight:'1.8', marginBottom:'1.5rem', whiteSpace:'pre-wrap', color:'#fff'}}>
               {answer}
             </div>
 
             {sources.length > 0 && (
               <div style={{marginBottom:'1.5rem'}}>
-                <h3 style={{color:'#888',fontSize:'0.85rem',marginBottom:'0.75rem',textTransform:'uppercase',letterSpacing:'0.1em'}}>Sources</h3>
-                <div style={{display:'flex',flexWrap:'wrap',gap:'0.5rem'}}>
+                <h3 style={{color:'#888', fontSize:'0.85rem', marginBottom:'0.75rem', textTransform:'uppercase', letterSpacing:'0.1em'}}>Sources</h3>
+                <div style={{display:'flex', flexWrap:'wrap', gap:'0.5rem'}}>
                   {sources.map((s, i) => (
-                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{background:'#1a1a1a',border:'1px solid #333',borderRadius:'8px',padding:'0.5rem 0.75rem',color:'#a5b4fc',fontSize:'0.85rem',textDecoration:'none'}}>[{i+1}] {s.title}</a>
+                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'0.5rem 0.75rem', color:'#a5b4fc', fontSize:'0.85rem', textDecoration:'none'}}>[{i+1}] {s.title}</a>
                   ))}
                 </div>
               </div>
@@ -114,16 +120,17 @@ export default function Home() {
 
             {related.length > 0 && (
               <div>
-                <h3 style={{color:'#888',fontSize:'0.85rem',marginBottom:'0.75rem',textTransform:'uppercase',letterSpacing:'0.1em'}}>Related</h3>
-                <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+                <h3 style={{color:'#888', fontSize:'0.85rem', marginBottom:'0.75rem', textTransform:'uppercase', letterSpacing:'0.1em'}}>Related</h3>
+                <div style={{display:'flex', flexDirection:'column', gap:'0.5rem'}}>
                   {related.map((q, i) => (
-                    <button key={i} onClick={() => { setInput(q); handleSearch(q) }} style={{background:'#1a1a1a',border:'1px solid #333',borderRadius:'8px',padding:'0.75rem 1rem',color:'#fff',fontSize:'0.9rem',textAlign:'left',cursor:'pointer'}}>{q}</button>
+                    <button key={i} onClick={() => { setInput(q); handleSearch(q) }} style={{background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'0.75rem 1rem', color:'#fff', fontSize:'0.9rem', textAlign:'left', cursor:'pointer'}}>{q}</button>
                   ))}
                 </div>
               </div>
             )}
           </div>
         )}
+
       </div>
     </div>
   )
