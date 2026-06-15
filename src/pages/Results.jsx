@@ -93,9 +93,8 @@ export default function Results() {
   return (
     <div className="results-page">
       <div className="sidebar">
-        <button className="home-btn" onClick={() => navigate('/')}>
-          ? Stoic
-        </button>
+        <div className="logo" onClick={() => navigate('/')}>Stoic</div>
+        <button className="new-chat" onClick={() => navigate('/')}>+ New Chat</button>
         <div className="history-list">
           <p className="history-label">Recent</p>
           {history.map(item => (
@@ -108,13 +107,15 @@ export default function Results() {
 
       <div className="results-main">
         <div className="top-search">
-          <span className="top-search-icon">Stoic</span>
           <input
             className="top-search-input"
             defaultValue={query}
             onKeyDown={e => e.key === 'Enter' && handleNewSearch(e.target.value)}
             placeholder="Ask anything..."
           />
+          <button className="top-search-btn" onClick={() => handleNewSearch(document.querySelector('.top-search-input').value)}>
+            Go
+          </button>
         </div>
 
         <div className="query-header">
@@ -123,11 +124,11 @@ export default function Results() {
 
         {sources.length > 0 && (
           <div className="sources-card">
-            <div className="sources-label">Stoic Sources</div>
+            <div className="sources-label">Sources</div>
             <div className="sources-list">
-              {sources.map(s => (
-                <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="source-item">
-                  <span className="source-num">{s.id}</span>
+              {sources.map((s, idx) => (
+                <a key={idx} href={s.url} target="_blank" rel="noreferrer" className="source-item">
+                  <span className="source-num">{idx + 1}</span>
                   <span className="source-title">{s.title}</span>
                 </a>
               ))}
@@ -136,19 +137,16 @@ export default function Results() {
         )}
 
         <div className="answer-card">
-          <div className="answer-label">
-            <div className="ai-dot" />
-            Stoic Answer
-          </div>
+          <div className="answer-label">Answer</div>
 
           {loading && (
             <div className="loading-state">
-              <div className="loading-bars"><span /><span /><span /><span /></div>
+              <div className="loading-dots"><span></span><span></span><span></span></div>
               <p>Searching the web...</p>
             </div>
           )}
 
-          {error && <div className="error-state">Stoic {error}</div>}
+          {error && <div className="error-state">{error}</div>}
 
           {answer && !loading && (
             <div className="answer-body">
@@ -163,15 +161,15 @@ export default function Results() {
             {chatMessages.length > 0 && (
               <div className="chat-messages">
                 {chatMessages.map((msg, i) => (
-                  <div key={i} className={`chat-msg${msg.role === 'user' ? ' chat-msg--user' : ''}`}>
-                    <div className="chat-msg-avatar">{msg.role === 'user' ? 'Stoic' : '?'}</div>
+                  <div key={i} className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : ''}`}>
+                    <div className="chat-msg-avatar">{msg.role === 'user' ? 'You' : 'AI'}</div>
                     <div className="chat-msg-content"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="chat-msg">
-                    <div className="chat-msg-avatar">?</div>
-                    <div className="chat-msg-content"><div className="typing-dots"><span /><span /><span /></div></div>
+                    <div className="chat-msg-avatar">AI</div>
+                    <div className="chat-msg-content"><div className="typing-dots"><span></span><span></span><span></span></div></div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
@@ -185,7 +183,7 @@ export default function Results() {
                 onKeyDown={e => e.key === 'Enter' && handleChatSend()}
                 placeholder="Ask a follow-up..."
               />
-              <button className="chat-send" onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}>?</button>
+              <button className="chat-send" onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}>Send</button>
             </div>
           </div>
         )}
