@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import './Results.css'
 
-const API_BASE = 'https://Stoic-api-2.onrender.com'
+const API_BASE = 'https://cloud9-api-2.onrender.com'
 
 export default function Results() {
   const [searchParams] = useSearchParams()
