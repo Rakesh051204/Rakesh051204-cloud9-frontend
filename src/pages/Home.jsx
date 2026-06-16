@@ -36,6 +36,13 @@ const c = {
   bottomBar: { borderTop:'1px solid #1a1a1a', background:'#070707', padding:'12px 24px' },
 }
 
+const connectors = [
+  { name:'GitHub', icon:'⚙️', color:'#e5e5e5', url:'https://github.com', searchUrl:(q) => `https://github.com/search?q=${encodeURIComponent(q)}` },
+  { name:'Slack', icon:'💬', color:'#e01e5a', url:'https://slack.com', searchUrl:() => 'https://slack.com' },
+  { name:'Notion', icon:'📝', color:'#e5e5e5', url:'https://notion.so', searchUrl:() => 'https://notion.so' },
+  { name:'Google Drive', icon:'📁', color:'#34a853', url:'https://drive.google.com', searchUrl:() => 'https://drive.google.com' },
+]
+
 export default function Home() {
   const [input, setInput] = useState("")
   const [query, setQuery] = useState("")
@@ -84,9 +91,9 @@ export default function Home() {
   }
 
   const StingrayLogo = ({ size = 28 }) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <svg width={size} height={size} viewBox="0 0 100 110" fill="none">
       <path d="M50,15 C47,15 32,45 10,55 C35,55 45,75 50,90 C55,75 65,55 90,55 C68,45 53,15 50,15 Z" fill="url(#sg)"/>
-      <path d="M50,90 L50,105" stroke="#888" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M50,90 L50,108" stroke="#888" strokeWidth="2.5" strokeLinecap="round"/>
       <defs>
         <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffffff"/>
@@ -126,7 +133,8 @@ export default function Home() {
           {/* Recent */}
           <span style={c.sectionLabel}>Recent</span>
           {recentSearches.map((text, i) => (
-            <a key={i} href="#" style={c.recentItem} onClick={(e) => { e.preventDefault(); setInput(text); handleSearch(text) }}
+            <a key={i} href="#" style={c.recentItem}
+              onClick={(e) => { e.preventDefault(); setInput(text); handleSearch(text) }}
               onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}>
               💬 <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{text}</span>
@@ -135,16 +143,32 @@ export default function Home() {
           <a href="#" style={{...c.recentItem, color:'#444', marginTop:'4px'}}>View all →</a>
 
           {/* Connectors */}
-          <span style={c.sectionLabel}>Connectors <span style={{float:'right',cursor:'pointer',color:'#555'}}>+</span></span>
-          {['GitHub','Slack','Notion','Google Drive'].map((name, i) => (
-            <a key={i} href="#" style={c.recentItem}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 12px',marginTop:'16px',marginBottom:'6px'}}>
+            <span style={{color:'#444',fontSize:'11px',letterSpacing:'0.08em',textTransform:'uppercase'}}>Connectors</span>
+            <span style={{color:'#555',fontSize:'14px',cursor:'pointer'}} title="Add connector">+</span>
+          </div>
+
+          {connectors.map((conn, i) => (
+            <a key={i} href="#"
+              style={{...c.recentItem, color: conn.color}}
+              onClick={(e) => {
+                e.preventDefault()
+                const url = input.trim() ? conn.searchUrl(input.trim()) : conn.url
+                window.open(url, '_blank')
+              }}
               onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-              <span style={{width:'16px',height:'16px',background:'#1a1a1a',borderRadius:'4px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'bold',flexShrink:0}}>{name[0]}</span>
-              {name}
+              <span style={{width:'20px',height:'20px',background:'#1a1a1a',borderRadius:'5px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'11px',flexShrink:0,border:'1px solid #2a2a2a'}}>
+                {conn.icon}
+              </span>
+              <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{conn.name}</span>
             </a>
           ))}
-          <a href="#" style={{...c.recentItem, color:'#444'}}>••• More</a>
+          <a href="#" style={{...c.recentItem, color:'#444'}}
+            onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            ••• More
+          </a>
         </div>
 
         {/* Upgrade */}
@@ -209,7 +233,14 @@ export default function Home() {
 
               {/* Quick actions */}
               <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',marginBottom:'32px'}}>
-                {quickActions.map((a,i) => <button key={i} style={c.quickBtn} onClick={() => setInput(a.label+' ')}>{a.icon} {a.label}</button>)}
+                {quickActions.map((a,i) => (
+                  <button key={i} style={c.quickBtn}
+                    onClick={() => setInput(a.label + ' ')}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor='#333'; e.currentTarget.style.color='#e5e5e5' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor='#1a1a1a'; e.currentTarget.style.color='#71717a' }}>
+                    {a.icon} {a.label}
+                  </button>
+                ))}
               </div>
 
               {/* Footer */}
@@ -248,7 +279,10 @@ export default function Home() {
               {related.length > 0 && (
                 <div style={{marginBottom:'32px'}}>
                   <span style={c.sourceLabel}>Related</span>
-                  {related.map((q,i) => <button key={i} style={c.relatedBtn} onClick={() => { setInput(q); handleSearch(q) }}>{q}</button>)}
+                  {related.map((q,i) => <button key={i} style={c.relatedBtn}
+                    onClick={() => { setInput(q); handleSearch(q) }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor='#333'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor='#1a1a1a'}>{q}</button>)}
                 </div>
               )}
             </div>
