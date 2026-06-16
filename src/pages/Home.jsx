@@ -10,9 +10,17 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const [selectedConnector, setSelectedConnector] = useState(null); // for detail modal
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customConnectors, setCustomConnectors] = useState([]);
+  const [newConnectorName, setNewConnectorName] = useState("");
+  const [newConnectorUrl, setNewConnectorUrl] = useState("");
   const abortControllerRef = useRef(null);
   const answerRef = useRef(null);
   const menuRef = useRef(null);
+
+  // Simulate free/pro status – change to true for testing custom connectors
+  const isPro = false;
 
   const handleSearch = async (q) => {
     const queryText = q || input;
@@ -77,11 +85,8 @@ export default function Home() {
     recognition.start();
   };
 
-  const togglePlusMenu = () => {
-    setShowPlusMenu(!showPlusMenu);
-  };
+  const togglePlusMenu = () => setShowPlusMenu(!showPlusMenu);
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -101,6 +106,84 @@ export default function Home() {
     { label: "Web Search", icon: <WebSearchIcon />, action: () => console.log("Web Search") },
     { label: "Project", icon: <ProjectIcon />, action: () => console.log("Project") },
   ];
+
+  // Connector details (like the screenshot)
+  const connectorDetails = {
+    'Gmail': {
+      title: 'Gmail',
+      subtitle: 'Productivity',
+      description: 'Connect',
+      about: 'Give Stoic access to search your emails.',
+      features: [
+        'Search your emails – Search your inbox, summarize unread emails, and find messages from specific people.',
+        'We never train on your data – xAI does not train on your Gmail data.',
+        'Your emails stay in Gmail – We don\'t store your emails. Grok searches Gmail in real-time when you ask questions.',
+      ],
+      icon: <GmailIconLarge />,
+      connectAction: () => alert('Connecting to Gmail... (OAuth would go here)'),
+    },
+    'Google Calendar': {
+      title: 'Google Calendar',
+      subtitle: 'Scheduling',
+      description: 'Connect',
+      about: 'Give Stoic access to your calendar.',
+      features: [
+        'View and manage events – Check your schedule, add events, and get reminders.',
+        'We never train on your data – Your calendar data stays private.',
+        'Real-time access – Stoic fetches your calendar when you ask.',
+      ],
+      icon: <CalendarIconLarge />,
+      connectAction: () => alert('Connecting to Google Calendar...'),
+    },
+    'Google Drive': {
+      title: 'Google Drive',
+      subtitle: 'Storage',
+      description: 'Connect',
+      about: 'Give Stoic access to your Drive files.',
+      features: [
+        'Search and summarize files – Find documents, spreadsheets, and presentations.',
+        'We never train on your data – Your files remain yours.',
+        'On-demand access – We fetch your Drive content only when you ask.',
+      ],
+      icon: <DriveIconLarge />,
+      connectAction: () => alert('Connecting to Google Drive...'),
+    },
+  };
+
+  // Pre-built connectors list
+  const prebuiltConnectors = [
+    { name: 'Gmail', icon: <GmailIcon />, detail: connectorDetails['Gmail'] },
+    { name: 'Google Calendar', icon: <CalendarIcon />, detail: connectorDetails['Google Calendar'] },
+    { name: 'Google Drive', icon: <DriveIcon />, detail: connectorDetails['Google Drive'] },
+  ];
+
+  // Combined connectors list (pre-built + custom + custom add button)
+  const allConnectors = [
+    ...prebuiltConnectors.map(c => ({
+      ...c,
+      action: () => setSelectedConnector(c.detail), // open detail modal
+    })),
+    ...customConnectors.map(c => ({
+      name: c.name,
+      icon: <CustomConnectorIcon />,
+      action: () => window.open(c.url, '_blank'),
+      // for custom, we could open a detail modal too, but we'll just open the URL for now
+    })),
+    {
+      name: 'Custom',
+      icon: <PlusIconSmall />,
+      action: () => {
+        if (!isPro) {
+          alert('Upgrade to Stoic Pro to add custom connectors.');
+        } else {
+          setShowCustomModal(true);
+        }
+      },
+    },
+  ];
+
+  // Close detail modal
+  const closeDetailModal = () => setSelectedConnector(null);
 
   return (
     <>
@@ -131,10 +214,25 @@ export default function Home() {
           </nav>
 
           <div style={styles.recent}>
-            <div style={styles.recentLabel}>RECENT</div>
+            <div style={styles.sectionLabel}>RECENT</div>
             {["What is quantum computing?", "Best habits for productivity", "Explain photosynthesis"].map((item, i) => (
               <div key={i} style={styles.recentItem} onClick={() => { setInput(item); handleSearch(item); }}>
                 {item}
+              </div>
+            ))}
+          </div>
+
+          {/* Connectors Section */}
+          <div style={styles.connectorsSection}>
+            <div style={styles.sectionLabel}>CONNECTORS</div>
+            {allConnectors.map((conn, idx) => (
+              <div
+                key={idx}
+                style={styles.connectorItem}
+                onClick={conn.action}
+              >
+                <span style={styles.connectorIcon}>{conn.icon}</span>
+                <span>{conn.name}</span>
               </div>
             ))}
           </div>
@@ -186,13 +284,8 @@ export default function Home() {
           {/* Persistent Bottom Search Bar */}
           <div style={styles.searchBar}>
             <div style={styles.searchContainer}>
-              {/* Plus icon with dropdown menu */}
               <div style={{ position: 'relative' }} ref={menuRef}>
-                <button
-                  onClick={togglePlusMenu}
-                  style={styles.iconButtonLeft}
-                  title="More options"
-                >
+                <button onClick={togglePlusMenu} style={styles.iconButtonLeft} title="More options">
                   <PlusIcon />
                 </button>
                 {showPlusMenu && (
@@ -214,15 +307,8 @@ export default function Home() {
                 )}
               </div>
 
-              <input
-                id="fileInput"
-                type="file"
-                multiple
-                style={{ display: 'none' }}
-                onChange={(e) => console.log(e.target.files)}
-              />
+              <input id="fileInput" type="file" multiple style={{ display: 'none' }} onChange={(e) => console.log(e.target.files)} />
 
-              {/* Input field */}
               <input
                 className="search-input"
                 value={input}
@@ -232,22 +318,11 @@ export default function Home() {
                 style={styles.searchInput}
               />
 
-              {/* Right side: Mic and Send/Stop */}
               <div style={styles.searchActions}>
-                <button
-                  onClick={handleMic}
-                  style={{
-                    ...styles.iconButton,
-                    color: listening ? '#14B8A6' : '#A1A1AA',
-                  }}
-                  title="Voice input"
-                >
+                <button onClick={handleMic} style={{ ...styles.iconButton, color: listening ? '#14B8A6' : '#A1A1AA' }} title="Voice input">
                   <MicIcon />
                 </button>
-                <button
-                  onClick={loading ? handleStop : () => handleSearch()}
-                  style={styles.searchButton}
-                >
+                <button onClick={loading ? handleStop : () => handleSearch()} style={styles.searchButton}>
                   {loading ? <StopIcon /> : <UpArrowIcon />}
                 </button>
               </div>
@@ -255,6 +330,78 @@ export default function Home() {
           </div>
         </main>
       </div>
+
+      {/* Connector Detail Modal */}
+      {selectedConnector && (
+        <div style={styles.modalOverlay} onClick={closeDetailModal}>
+          <div style={styles.detailModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.detailHeader}>
+              <span style={styles.detailIcon}>{selectedConnector.icon}</span>
+              <div>
+                <div style={styles.detailTitle}>{selectedConnector.title}</div>
+                <div style={styles.detailSubtitle}>{selectedConnector.subtitle}</div>
+              </div>
+              <button style={styles.detailClose} onClick={closeDetailModal}>✕</button>
+            </div>
+            <div style={styles.detailDescription}>{selectedConnector.description}</div>
+            <button style={styles.detailConnect} onClick={selectedConnector.connectAction}>
+              Connect
+            </button>
+            <div style={styles.detailAbout}>
+              <div style={styles.detailAboutTitle}>About this Connector</div>
+              {selectedConnector.features.map((feature, i) => (
+                <div key={i} style={styles.detailFeature}>
+                  <span style={styles.detailBullet}>•</span> {feature}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Connector Modal (add new) */}
+      {showCustomModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowCustomModal(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>Add Custom Connector</h3>
+            <input
+              type="text"
+              placeholder="Connector name (e.g., My Notes)"
+              value={newConnectorName}
+              onChange={(e) => setNewConnectorName(e.target.value)}
+              style={styles.modalInput}
+            />
+            <input
+              type="text"
+              placeholder="URL (e.g., https://notes.example.com)"
+              value={newConnectorUrl}
+              onChange={(e) => setNewConnectorUrl(e.target.value)}
+              style={styles.modalInput}
+            />
+            <div style={styles.modalActions}>
+              <button style={styles.modalCancel} onClick={() => setShowCustomModal(false)}>
+                Cancel
+              </button>
+              <button
+                style={styles.modalAdd}
+                onClick={() => {
+                  if (newConnectorName.trim() && newConnectorUrl.trim()) {
+                    setCustomConnectors([
+                      ...customConnectors,
+                      { name: newConnectorName.trim(), url: newConnectorUrl.trim() },
+                    ]);
+                    setNewConnectorName('');
+                    setNewConnectorUrl('');
+                    setShowCustomModal(false);
+                  }
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -278,7 +425,7 @@ const NavItem = ({ label, icon, active = false }) => (
   </div>
 );
 
-// ----- SVG Icons -----
+// ----- SVG Icons (small) -----
 const HomeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 12l9-9 9 9" />
@@ -327,6 +474,13 @@ const PlusIcon = () => (
   </svg>
 );
 
+const PlusIconSmall = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
 const MicIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -336,7 +490,68 @@ const MicIcon = () => (
   </svg>
 );
 
-// Plus menu icons
+// ----- Connector Icons (small sidebar) -----
+const GmailIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16v16H4z" />
+    <path d="M4 4l8 6 8-6" />
+    <path d="M4 20l6-4.5" />
+    <path d="M20 20l-6-4.5" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const DriveIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 4h8v16H8z" />
+    <path d="M4 8h4v8H4z" />
+    <path d="M16 8h4v8h-4z" />
+  </svg>
+);
+
+const CustomConnectorIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.04.04A10 10 0 0 0 12 18a10 10 0 0 0 6.36-2.96l.04-.04z" />
+  </svg>
+);
+
+// ----- Connector Icons (large for detail modal) -----
+const GmailIconLarge = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E5E5E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16v16H4z" />
+    <path d="M4 4l8 6 8-6" />
+    <path d="M4 20l6-4.5" />
+    <path d="M20 20l-6-4.5" />
+  </svg>
+);
+
+const CalendarIconLarge = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E5E5E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const DriveIconLarge = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E5E5E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 4h8v16H8z" />
+    <path d="M4 8h4v8H4z" />
+    <path d="M16 8h4v8h-4z" />
+  </svg>
+);
+
+// ----- Plus Menu Icons -----
 const UploadIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -456,12 +671,15 @@ const styles = {
   recent: {
     padding: '0 16px',
     marginTop: '20px',
-    flex: 1,
   },
-  recentLabel: {
+  connectorsSection: {
+    padding: '0 16px',
+    marginTop: '20px',
+  },
+  sectionLabel: {
     padding: '0 20px',
     color: '#666',
-    fontSize: '12px',
+    fontSize: '11px',
     marginBottom: '8px',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
@@ -476,6 +694,23 @@ const styles = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+  },
+  connectorItem: {
+    padding: '8px 20px',
+    color: '#A1A1AA',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'background 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  connectorIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    opacity: 0.7,
+    color: '#A1A1AA',
   },
   upgradeBox: {
     margin: 'auto 16px 20px',
@@ -652,7 +887,6 @@ const styles = {
     transition: 'all 0.2s',
     fontSize: '20px',
   },
-  // Plus menu styles
   plusMenu: {
     position: 'absolute',
     bottom: 'calc(100% + 8px)',
@@ -680,5 +914,145 @@ const styles = {
     alignItems: 'center',
     opacity: 0.7,
     color: '#A1A1AA',
+  },
+  // Detail Modal
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  detailModal: {
+    background: '#1A1A1A',
+    borderRadius: '24px',
+    padding: '32px',
+    maxWidth: '520px',
+    width: '90%',
+    border: '1px solid #333',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+  },
+  detailHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    marginBottom: '20px',
+    position: 'relative',
+  },
+  detailIcon: {
+    flexShrink: 0,
+  },
+  detailTitle: {
+    fontSize: '22px',
+    fontWeight: '600',
+    color: '#E5E5E5',
+  },
+  detailSubtitle: {
+    fontSize: '14px',
+    color: '#888',
+    marginTop: '2px',
+  },
+  detailClose: {
+    position: 'absolute',
+    top: '0',
+    right: '0',
+    background: 'transparent',
+    border: 'none',
+    color: '#888',
+    fontSize: '20px',
+    cursor: 'pointer',
+  },
+  detailDescription: {
+    fontSize: '15px',
+    color: '#A1A1AA',
+    marginBottom: '20px',
+  },
+  detailConnect: {
+    background: '#E5E5E5',
+    color: '#0A0A0A',
+    border: 'none',
+    padding: '12px 28px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    width: '100%',
+    marginBottom: '24px',
+  },
+  detailAbout: {
+    borderTop: '1px solid #333',
+    paddingTop: '20px',
+  },
+  detailAboutTitle: {
+    fontSize: '15px',
+    fontWeight: '500',
+    color: '#E5E5E5',
+    marginBottom: '12px',
+  },
+  detailFeature: {
+    fontSize: '14px',
+    color: '#A1A1AA',
+    marginBottom: '10px',
+    display: 'flex',
+    gap: '8px',
+  },
+  detailBullet: {
+    color: '#666',
+    flexShrink: 0,
+  },
+  // Custom Modal (same overlay)
+  modal: {
+    background: '#1A1A1A',
+    borderRadius: '20px',
+    padding: '32px',
+    maxWidth: '440px',
+    width: '90%',
+    border: '1px solid #333',
+  },
+  modalTitle: {
+    fontSize: '22px',
+    fontWeight: '500',
+    marginBottom: '20px',
+    color: '#E5E5E5',
+  },
+  modalInput: {
+    width: '100%',
+    background: '#0A0A0A',
+    border: '1px solid #333',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    color: '#E5E5E5',
+    fontSize: '15px',
+    marginBottom: '12px',
+    outline: 'none',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+    marginTop: '16px',
+  },
+  modalCancel: {
+    background: 'transparent',
+    border: '1px solid #444',
+    color: '#A1A1AA',
+    padding: '10px 20px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  modalAdd: {
+    background: '#E5E5E5',
+    color: '#0A0A0A',
+    border: 'none',
+    padding: '10px 24px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    fontSize: '14px',
   },
 };
