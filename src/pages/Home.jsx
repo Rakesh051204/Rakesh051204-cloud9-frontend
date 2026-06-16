@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const API_BASE = 'https://cloud9-api-2.onrender.com';
 
@@ -9,28 +9,54 @@ export default function Home() {
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const abortControllerRef = useRef(null);
   const answerRef = useRef(null);
+  const menuRef = useRef(null);
 
-  const handleSearch = async () => {
-    const q = input.trim();
-    if (!q) return;
-    setQuery(q);
+  const handleSearch = async (q) => {
+    const queryText = q || input;
+    if (!queryText.trim()) return;
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setQuery(queryText);
     setLoading(true);
     setAnswer("");
+
     try {
       const res = await fetch(`${API_BASE}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ query: queryText.trim() }),
+        signal: controller.signal,
       });
       const data = await res.json();
       setAnswer(data.answer || "No answer generated.");
       setSources(data.sources || []);
-    } catch (e) {
+    } catch (error) {
+      if (error.name === "AbortError") {
+        setLoading(false);
+        return;
+      }
       setAnswer("Sorry, something went wrong.");
     }
     setLoading(false);
+    abortControllerRef.current = null;
     setTimeout(() => answerRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setLoading(false);
+    }
   };
 
   const handleMic = () => {
@@ -50,6 +76,31 @@ export default function Home() {
     };
     recognition.start();
   };
+
+  const togglePlusMenu = () => {
+    setShowPlusMenu(!showPlusMenu);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowPlusMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const plusOptions = [
+    { label: "Upload photos & files", icon: <UploadIcon />, action: () => document.getElementById('fileInput')?.click() },
+    { label: "Recent files", icon: <RecentIcon />, action: () => console.log("Recent files") },
+    { label: "Create Image", icon: <ImageIcon />, action: () => console.log("Create Image") },
+    { label: "Thinking", icon: <ThinkingIcon />, action: () => console.log("Thinking") },
+    { label: "Deep Search", icon: <DeepSearchIcon />, action: () => console.log("Deep Search") },
+    { label: "Web Search", icon: <WebSearchIcon />, action: () => console.log("Web Search") },
+    { label: "Project", icon: <ProjectIcon />, action: () => console.log("Project") },
+  ];
 
   return (
     <>
@@ -82,7 +133,7 @@ export default function Home() {
           <div style={styles.recent}>
             <div style={styles.recentLabel}>RECENT</div>
             {["What is quantum computing?", "Best habits for productivity", "Explain photosynthesis"].map((item, i) => (
-              <div key={i} style={styles.recentItem} onClick={() => { setInput(item); handleSearch(); }}>
+              <div key={i} style={styles.recentItem} onClick={() => { setInput(item); handleSearch(item); }}>
                 {item}
               </div>
             ))}
@@ -135,6 +186,43 @@ export default function Home() {
           {/* Persistent Bottom Search Bar */}
           <div style={styles.searchBar}>
             <div style={styles.searchContainer}>
+              {/* Plus icon with dropdown menu */}
+              <div style={{ position: 'relative' }} ref={menuRef}>
+                <button
+                  onClick={togglePlusMenu}
+                  style={styles.iconButtonLeft}
+                  title="More options"
+                >
+                  <PlusIcon />
+                </button>
+                {showPlusMenu && (
+                  <div style={styles.plusMenu}>
+                    {plusOptions.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        style={styles.plusMenuItem}
+                        onClick={() => {
+                          opt.action();
+                          setShowPlusMenu(false);
+                        }}
+                      >
+                        <span style={styles.plusMenuIcon}>{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <input
+                id="fileInput"
+                type="file"
+                multiple
+                style={{ display: 'none' }}
+                onChange={(e) => console.log(e.target.files)}
+              />
+
+              {/* Input field */}
               <input
                 className="search-input"
                 value={input}
@@ -143,23 +231,9 @@ export default function Home() {
                 placeholder="Ask anything..."
                 style={styles.searchInput}
               />
+
+              {/* Right side: Mic and Send/Stop */}
               <div style={styles.searchActions}>
-                {/* Plus Icon - file upload */}
-                <button
-                  onClick={() => document.getElementById('fileInput')?.click()}
-                  style={styles.iconButton}
-                  title="Upload files"
-                >
-                  <PlusIcon />
-                </button>
-                <input
-                  id="fileInput"
-                  type="file"
-                  multiple
-                  style={{ display: 'none' }}
-                  onChange={(e) => console.log(e.target.files)}
-                />
-                {/* Mic Icon */}
                 <button
                   onClick={handleMic}
                   style={{
@@ -170,11 +244,9 @@ export default function Home() {
                 >
                   <MicIcon />
                 </button>
-                {/* Up Arrow / Stop button */}
                 <button
-                  onClick={handleSearch}
+                  onClick={loading ? handleStop : () => handleSearch()}
                   style={styles.searchButton}
-                  disabled={loading}
                 >
                   {loading ? <StopIcon /> : <UpArrowIcon />}
                 </button>
@@ -206,7 +278,7 @@ const NavItem = ({ label, icon, active = false }) => (
   </div>
 );
 
-// ----- SVG Icons (Dark, Professional) -----
+// ----- SVG Icons -----
 const HomeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 12l9-9 9 9" />
@@ -235,7 +307,6 @@ const ImagineIcon = () => (
   </svg>
 );
 
-// Up Arrow Icon (pointing up)
 const UpArrowIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="19" x2="12" y2="5" />
@@ -243,14 +314,12 @@ const UpArrowIcon = () => (
   </svg>
 );
 
-// Stop Icon (square)
 const StopIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <rect x="6" y="6" width="12" height="12" />
   </svg>
 );
 
-// Plus Icon
 const PlusIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="5" x2="12" y2="19" />
@@ -258,13 +327,74 @@ const PlusIcon = () => (
   </svg>
 );
 
-// Mic Icon
 const MicIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
     <line x1="12" y1="19" x2="12" y2="23" />
     <line x1="8" y1="23" x2="16" y2="23" />
+  </svg>
+);
+
+// Plus menu icons
+const UploadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const RecentIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+const ThinkingIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="4" />
+    <line x1="12" y1="20" x2="12" y2="22" />
+    <line x1="2" y1="12" x2="4" y2="12" />
+    <line x1="20" y1="12" x2="22" y2="12" />
+  </svg>
+);
+
+const DeepSearchIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <line x1="11" y1="3" x2="11" y2="5" />
+    <line x1="11" y1="17" x2="11" y2="19" />
+    <line x1="3" y1="11" x2="5" y2="11" />
+    <line x1="17" y1="11" x2="19" y2="11" />
+  </svg>
+);
+
+const WebSearchIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
+
+const ProjectIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    <path d="M12 11v4" />
+    <path d="M10 13h4" />
   </svg>
 );
 
@@ -467,7 +597,7 @@ const styles = {
     padding: '8px 16px',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '10px',
   },
   searchInput: {
     flex: 1,
@@ -482,6 +612,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
+  },
+  iconButtonLeft: {
+    background: 'transparent',
+    border: 'none',
+    color: '#A1A1AA',
+    cursor: 'pointer',
+    padding: '8px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'color 0.2s, background 0.2s',
+    marginRight: '4px',
   },
   iconButton: {
     background: 'transparent',
@@ -508,5 +651,34 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s',
     fontSize: '20px',
+  },
+  // Plus menu styles
+  plusMenu: {
+    position: 'absolute',
+    bottom: 'calc(100% + 8px)',
+    left: 0,
+    background: '#1A1A1A',
+    border: '1px solid #333',
+    borderRadius: '12px',
+    padding: '8px 0',
+    minWidth: '220px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+    zIndex: 200,
+  },
+  plusMenuItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 16px',
+    color: '#E5E5E5',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  plusMenuIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    opacity: 0.7,
+    color: '#A1A1AA',
   },
 };
