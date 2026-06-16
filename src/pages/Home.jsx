@@ -50,8 +50,9 @@ export default function Home() {
   ]
 
   const models = [
-    { id: "groq", label: "⚡ Groq", color: "#f97316" },
-    { id: "deepseek", label: "🔵 DeepSeek", color: "#3b82f6" },
+    { id: "groq", label: "⚡ Llama 3.3", color: "#f97316" },
+    { id: "deepseek", label: "🐋 DeepSeek", color: "#3b82f6" },
+    { id: "gemini", label: "✨ Gemini Flash", color: "#10b981" },
   ]
 
   return (
