@@ -10,25 +10,24 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
-  const [selectedConnector, setSelectedConnector] = useState(null); // for detail modal
+  const [selectedConnector, setSelectedConnector] = useState(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customConnectors, setCustomConnectors] = useState([]);
   const [newConnectorName, setNewConnectorName] = useState("");
   const [newConnectorUrl, setNewConnectorUrl] = useState("");
+  const [connectedConnectors, setConnectedConnectors] = useState([]); // for simulation
+
   const abortControllerRef = useRef(null);
   const answerRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Simulate free/pro status – change to true for testing custom connectors
-  const isPro = false;
+  const isPro = false; // change to true to allow custom connectors
 
   const handleSearch = async (q) => {
     const queryText = q || input;
     if (!queryText.trim()) return;
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+    if (abortControllerRef.current) abortControllerRef.current.abort();
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -107,7 +106,6 @@ export default function Home() {
     { label: "Project", icon: <ProjectIcon />, action: () => console.log("Project") },
   ];
 
-  // Connector details (like the screenshot)
   const connectorDetails = {
     'Gmail': {
       title: 'Gmail',
@@ -120,7 +118,15 @@ export default function Home() {
         'Your emails stay in Gmail – We don\'t store your emails. Grok searches Gmail in real-time when you ask questions.',
       ],
       icon: <GmailIconLarge />,
-      connectAction: () => alert('Connecting to Gmail... (OAuth would go here)'),
+      connectAction: () => {
+        if (!connectedConnectors.includes('Gmail')) {
+          setConnectedConnectors([...connectedConnectors, 'Gmail']);
+          alert('Gmail connected successfully!');
+        } else {
+          setConnectedConnectors(connectedConnectors.filter(c => c !== 'Gmail'));
+          alert('Gmail disconnected.');
+        }
+      },
     },
     'Google Calendar': {
       title: 'Google Calendar',
@@ -133,7 +139,15 @@ export default function Home() {
         'Real-time access – Stoic fetches your calendar when you ask.',
       ],
       icon: <CalendarIconLarge />,
-      connectAction: () => alert('Connecting to Google Calendar...'),
+      connectAction: () => {
+        if (!connectedConnectors.includes('Google Calendar')) {
+          setConnectedConnectors([...connectedConnectors, 'Google Calendar']);
+          alert('Google Calendar connected!');
+        } else {
+          setConnectedConnectors(connectedConnectors.filter(c => c !== 'Google Calendar'));
+          alert('Google Calendar disconnected.');
+        }
+      },
     },
     'Google Drive': {
       title: 'Google Drive',
@@ -146,28 +160,33 @@ export default function Home() {
         'On-demand access – We fetch your Drive content only when you ask.',
       ],
       icon: <DriveIconLarge />,
-      connectAction: () => alert('Connecting to Google Drive...'),
+      connectAction: () => {
+        if (!connectedConnectors.includes('Google Drive')) {
+          setConnectedConnectors([...connectedConnectors, 'Google Drive']);
+          alert('Google Drive connected!');
+        } else {
+          setConnectedConnectors(connectedConnectors.filter(c => c !== 'Google Drive'));
+          alert('Google Drive disconnected.');
+        }
+      },
     },
   };
 
-  // Pre-built connectors list
   const prebuiltConnectors = [
     { name: 'Gmail', icon: <GmailIcon />, detail: connectorDetails['Gmail'] },
     { name: 'Google Calendar', icon: <CalendarIcon />, detail: connectorDetails['Google Calendar'] },
     { name: 'Google Drive', icon: <DriveIcon />, detail: connectorDetails['Google Drive'] },
   ];
 
-  // Combined connectors list (pre-built + custom + custom add button)
   const allConnectors = [
     ...prebuiltConnectors.map(c => ({
       ...c,
-      action: () => setSelectedConnector(c.detail), // open detail modal
+      action: () => setSelectedConnector(c.detail),
     })),
     ...customConnectors.map(c => ({
       name: c.name,
       icon: <CustomConnectorIcon />,
       action: () => window.open(c.url, '_blank'),
-      // for custom, we could open a detail modal too, but we'll just open the URL for now
     })),
     {
       name: 'Custom',
@@ -182,7 +201,6 @@ export default function Home() {
     },
   ];
 
-  // Close detail modal
   const closeDetailModal = () => setSelectedConnector(null);
 
   return (
@@ -222,17 +240,15 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Connectors Section */}
           <div style={styles.connectorsSection}>
             <div style={styles.sectionLabel}>CONNECTORS</div>
             {allConnectors.map((conn, idx) => (
-              <div
-                key={idx}
-                style={styles.connectorItem}
-                onClick={conn.action}
-              >
+              <div key={idx} style={styles.connectorItem} onClick={conn.action}>
                 <span style={styles.connectorIcon}>{conn.icon}</span>
                 <span>{conn.name}</span>
+                {conn.name !== 'Custom' && connectedConnectors.includes(conn.name) && (
+                  <span style={{ marginLeft: 'auto', color: '#10B981', fontSize: '12px' }}>✓</span>
+                )}
               </div>
             ))}
           </div>
@@ -344,8 +360,21 @@ export default function Home() {
               <button style={styles.detailClose} onClick={closeDetailModal}>✕</button>
             </div>
             <div style={styles.detailDescription}>{selectedConnector.description}</div>
-            <button style={styles.detailConnect} onClick={selectedConnector.connectAction}>
-              Connect
+            <button
+              style={{
+                ...styles.detailConnect,
+                background: connectedConnectors.includes(selectedConnector.title)
+                  ? '#10B981'
+                  : '#E5E5E5',
+                color: connectedConnectors.includes(selectedConnector.title)
+                  ? '#FFFFFF'
+                  : '#0A0A0A',
+              }}
+              onClick={selectedConnector.connectAction}
+            >
+              {connectedConnectors.includes(selectedConnector.title)
+                ? '✓ Connected'
+                : 'Connect'}
             </button>
             <div style={styles.detailAbout}>
               <div style={styles.detailAboutTitle}>About this Connector</div>
@@ -359,7 +388,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Custom Connector Modal (add new) */}
+      {/* Custom Connector Modal */}
       {showCustomModal && (
         <div style={styles.modalOverlay} onClick={() => setShowCustomModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -613,7 +642,7 @@ const ProjectIcon = () => (
   </svg>
 );
 
-// ----- Inline Styles -----
+// ----- Styles -----
 const styles = {
   app: {
     display: 'flex',
@@ -915,7 +944,6 @@ const styles = {
     opacity: 0.7,
     color: '#A1A1AA',
   },
-  // Detail Modal
   modalOverlay: {
     position: 'fixed',
     inset: 0,
@@ -972,8 +1000,6 @@ const styles = {
     marginBottom: '20px',
   },
   detailConnect: {
-    background: '#E5E5E5',
-    color: '#0A0A0A',
     border: 'none',
     padding: '12px 28px',
     borderRadius: '12px',
@@ -1004,7 +1030,6 @@ const styles = {
     color: '#666',
     flexShrink: 0,
   },
-  // Custom Modal (same overlay)
   modal: {
     background: '#1A1A1A',
     borderRadius: '20px',
