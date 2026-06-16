@@ -1,316 +1,145 @@
-import { useState, useRef } from "react"
+import { useState, useRef } from "react";
 
-const API_BASE = 'https://cloud9-api-2.onrender.com'
-
-const c = {
-  app: { display:'flex', height:'100vh', background:'#0a0a0a', color:'#e5e5e5', fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', overflow:'hidden', width:'100vw' },
-  sidebar: { width:'260px', borderRight:'1px solid #1a1a1a', background:'#0a0a0a', display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'12px', flexShrink:0, height:'100%', overflowY:'auto' },
-  logoRow: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 4px', marginBottom:'12px' },
-  logoLeft: { display:'flex', alignItems:'center', gap:'8px' },
-  logoText: { fontWeight:'600', fontSize:'18px', letterSpacing:'2px', color:'#e5e5e5', textTransform:'uppercase' },
-  newChatBtn: { width:'100%', background:'#121212', border:'1px solid #2a2a2a', borderRadius:'10px', padding:'9px 12px', color:'#d4d4d4', cursor:'pointer', fontSize:'13px', display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' },
-  navItem: (active) => ({ display:'flex', alignItems:'center', gap:'12px', padding:'9px 12px', borderRadius:'8px', cursor:'pointer', color: active?'#fff':'#666', background: active?'#1a1a1a':'transparent', fontSize:'14px', marginBottom:'2px', textDecoration:'none' }),
-  sectionLabel: { color:'#444', fontSize:'11px', letterSpacing:'0.08em', padding:'0 12px', marginBottom:'6px', textTransform:'uppercase', display:'block', marginTop:'16px' },
-  recentItem: { display:'flex', alignItems:'center', gap:'8px', padding:'7px 12px', borderRadius:'8px', cursor:'pointer', color:'#666', fontSize:'13px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textDecoration:'none' },
-  upgradeBox: { border:'1px solid #2a2a2a', background:'linear-gradient(to bottom, #161616, #111)', borderRadius:'12px', padding:'14px', cursor:'pointer', marginTop:'12px' },
-  main: { flex:1, display:'flex', flexDirection:'column', background:'#070707', height:'100%', overflow:'hidden', position:'relative' },
-  topbar: { display:'flex', alignItems:'center', justifyContent:'flex-end', padding:'14px 24px', gap:'12px', position:'absolute', top:0, right:0, left:0, zIndex:20 },
-  signInBtn: { background:'#f4f4f5', border:'none', borderRadius:'8px', color:'#09090b', fontWeight:'500', fontSize:'12px', padding:'7px 18px', cursor:'pointer' },
-  content: { flex:1, overflowY:'auto', display:'flex', flexDirection:'column', alignItems:'center', padding:'0 24px 160px', paddingTop:'64px' },
-  heroSection: { display:'flex', flexDirection:'column', alignItems:'center', width:'100%', maxWidth:'720px', marginTop:'32px' },
-  heroTitle: { fontSize:'52px', fontWeight:'400', margin:'0 0 10px', letterSpacing:'-1px', fontFamily:'Georgia,serif', color:'#fff' },
-  heroSub: { fontSize:'14px', color:'#52525b', margin:'0 0 32px', letterSpacing:'0.02em' },
-  searchCard: { width:'100%', background:'#0f0f0f', border:'1px solid #27272a', borderRadius:'20px', padding:'16px 20px', marginBottom:'20px', boxShadow:'0 25px 50px rgba(0,0,0,0.5)' },
-  searchTextarea: { width:'100%', background:'transparent', border:'none', outline:'none', color:'#e5e5e5', fontSize:'15px', lineHeight:'1.6', resize:'none', fontFamily:'inherit', marginBottom:'12px' },
-  searchBottom: { display:'flex', alignItems:'center', justifyContent:'space-between' },
-  toolBtn: { background:'none', border:'none', color:'#52525b', cursor:'pointer', padding:'8px', borderRadius:'8px', fontSize:'14px' },
-  sendBtn: { width:'32px', height:'32px', display:'flex', alignItems:'center', justifyContent:'center', background:'#f4f4f5', border:'none', color:'#09090b', borderRadius:'50%', cursor:'pointer', fontSize:'14px', fontWeight:'bold' },
-  modelPill: (active, color) => ({ padding:'4px 12px', borderRadius:'20px', border:`1px solid ${active?color:'#27272a'}`, background: active?`${color}20`:'transparent', color: active?color:'#52525b', fontSize:'12px', cursor:'pointer', marginRight:'6px', marginBottom:'6px' }),
-  quickBtn: { display:'flex', alignItems:'center', gap:'6px', padding:'8px 16px', borderRadius:'24px', border:'1px solid #1a1a1a', background:'#0f0f0f', color:'#71717a', fontSize:'12px', cursor:'pointer', marginRight:'8px', marginBottom:'8px' },
-  footer: { display:'flex', alignItems:'center', gap:'12px', color:'#3f3f46', fontSize:'11px', marginTop:'8px' },
-  answerSection: { width:'100%', maxWidth:'720px', paddingTop:'24px' },
-  answerCard: { background:'#0f0f0f', border:'1px solid #1a1a1a', borderRadius:'20px', padding:'24px', lineHeight:'1.8', color:'#d4d4d4', fontSize:'15px', marginBottom:'16px' },
-  sourceLabel: { color:'#3f3f46', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px', display:'block' },
-  sourceChip: { background:'#0f0f0f', border:'1px solid #1a1a1a', borderRadius:'8px', padding:'6px 12px', color:'#818cf8', fontSize:'12px', textDecoration:'none', marginRight:'6px', marginBottom:'6px', display:'inline-block' },
-  relatedBtn: { width:'100%', background:'#0f0f0f', border:'1px solid #1a1a1a', borderRadius:'12px', padding:'12px 16px', color:'#d4d4d4', fontSize:'14px', textAlign:'left', cursor:'pointer', marginBottom:'6px', display:'block' },
-  bottomBar: { borderTop:'1px solid #1a1a1a', background:'#070707', padding:'12px 24px' },
-}
-
-const connectors = [
-  { name:'GitHub', icon:'⚙️', color:'#e5e5e5', url:'https://github.com', searchUrl:(q) => `https://github.com/search?q=${encodeURIComponent(q)}` },
-  { name:'Slack', icon:'💬', color:'#e01e5a', url:'https://slack.com', searchUrl:() => 'https://slack.com' },
-  { name:'Notion', icon:'📝', color:'#e5e5e5', url:'https://notion.so', searchUrl:() => 'https://notion.so' },
-  { name:'Google Drive', icon:'📁', color:'#34a853', url:'https://drive.google.com', searchUrl:() => 'https://drive.google.com' },
-]
+const API_BASE = 'https://cloud9-api-2.onrender.com';
 
 export default function Home() {
-  const [input, setInput] = useState("")
-  const [query, setQuery] = useState("")
-  const [answer, setAnswer] = useState("")
-  const [sources, setSources] = useState([])
-  const [related, setRelated] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [model, setModel] = useState("groq")
-  const [listening, setListening] = useState(false)
-  const answerRef = useRef(null)
+  const [input, setInput] = useState("");
+  const [query, setQuery] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [sources, setSources] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const models = [
-    { id:"groq", label:"Llama 3.3", color:"#f97316" },
-    { id:"deepseek", label:"DeepSeek", color:"#3b82f6" },
-    { id:"gemini", label:"Gemini Flash", color:"#10b981" },
-  ]
+  const handleSearch = async () => {
+    if (!input.trim()) return;
+    setQuery(input);
+    setLoading(true);
+    setAnswer("");
 
-  const recentSearches = ["What is quantum computing?","Best habits for productivity","Explain photosynthesis","Startup ideas for 2024","How does AI work?"]
-  const quickActions = [{ label:'Research', icon:'🔍' },{ label:'Deep Search', icon:'👁️' },{ label:'Create Image', icon:'🖼️' },{ label:'Code', icon:'💻' },{ label:'Analyze', icon:'📊' }]
-
-  const handleSearch = (q) => {
-    const sq = q || input
-    if (!sq.trim()) return
-    setQuery(sq); setLoading(true); setError(""); setAnswer(""); setSources([]); setRelated([])
-    fetch(`${API_BASE}/ask`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ query: sq.trim(), model }) })
-      .then(r => r.json())
-      .then(data => {
-        setAnswer(data.answer || 'No answer')
-        setSources(data.sources || [])
-        setRelated(data.relatedQuestions || [])
-        setLoading(false)
-        setTimeout(() => answerRef.current?.scrollIntoView({ behavior:'smooth' }), 100)
-      })
-      .catch(err => { setError(err.message); setLoading(false) })
-  }
-
-  const handleMic = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) return
-    const r = new SR(); r.lang='en-US'
-    r.onstart = () => setListening(true)
-    r.onend = () => setListening(false)
-    r.onresult = (e) => { const t = e.results[0][0].transcript; setInput(t); handleSearch(t) }
-    r.start()
-  }
-
-  const StingrayLogo = ({ size = 28 }) => (
-    <svg width={size} height={size} viewBox="0 0 100 110" fill="none">
-      <path d="M50,15 C47,15 32,45 10,55 C35,55 45,75 50,90 C55,75 65,55 90,55 C68,45 53,15 50,15 Z" fill="url(#sg)"/>
-      <path d="M50,90 L50,108" stroke="#888" strokeWidth="2.5" strokeLinecap="round"/>
-      <defs>
-        <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff"/>
-          <stop offset="50%" stopColor="#a3a3a3"/>
-          <stop offset="100%" stopColor="#404040"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  )
+    try {
+      const res = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: input.trim() }),
+      });
+      const data = await res.json();
+      setAnswer(data.answer || "No answer generated.");
+      setSources(data.sources || []);
+    } catch (e) {
+      setAnswer("Sorry, something went wrong.");
+    }
+    setLoading(false);
+  };
 
   return (
-    <div style={c.app}>
+    <div style={{ display: 'flex', height: '100vh', background: '#0A0A0A', color: '#E5E5E5', fontFamily: 'system-ui, sans-serif', overflow: 'hidden' }}>
 
-      {/* SIDEBAR */}
-      <aside style={c.sidebar}>
-        <div>
-          {/* Logo */}
-          <div style={c.logoRow}>
-            <div style={c.logoLeft}>
-              <StingrayLogo size={24}/>
-              <span style={c.logoText}>Stoic</span>
+      {/* Sidebar - Clean & Professional */}
+      <div style={{ width: '260px', background: '#0A0A0A', borderRight: '1px solid #1F1F1F', padding: '20px 0', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* Logo */}
+        <div style={{ padding: '0 24px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #1F1F1F' }}>
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="#E5E5E5">
+            <path d="M50 15 Q30 40 15 55 Q35 65 50 85 Q65 65 85 55 Q70 40 50 15Z" />
+          </svg>
+          <span style={{ fontSize: '22px', fontWeight: '600', letterSpacing: '-0.5px' }}>STOIC</span>
+        </div>
+
+        {/* Navigation - Text Only */}
+        <div style={{ padding: '30px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ padding: '10px 20px', background: '#1F1F1F', borderRadius: '12px', fontWeight: '500' }}>Home</div>
+          <div style={{ padding: '10px 20px', color: '#A1A1AA', borderRadius: '12px', cursor: 'pointer' }}>Discover</div>
+          <div style={{ padding: '10px 20px', color: '#A1A1AA', borderRadius: '12px', cursor: 'pointer' }}>Library</div>
+          <div style={{ padding: '10px 20px', color: '#A1A1AA', borderRadius: '12px', cursor: 'pointer' }}>Imagine</div>
+        </div>
+
+        {/* Recent */}
+        <div style={{ padding: '0 16px' }}>
+          <div style={{ padding: '0 20px', color: '#666', fontSize: '12px', marginBottom: '8px' }}>RECENT</div>
+          {["What is quantum computing?", "Best habits for productivity", "Explain photosynthesis"].map((item, i) => (
+            <div 
+              key={i}
+              onClick={() => { setInput(item); handleSearch(); }}
+              style={{ padding: '8px 20px', color: '#A1A1AA', borderRadius: '10px', cursor: 'pointer', fontSize: '14px' }}
+            >
+              {item}
             </div>
-            <button style={{background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:'12px'}}>◀</button>
-          </div>
-
-          {/* New Chat */}
-          <button style={c.newChatBtn} onClick={() => { setAnswer(""); setQuery(""); setInput("") }}>
-            <span style={{display:'flex',alignItems:'center',gap:'8px'}}><span style={{color:'#888'}}>+</span> New Chat</span>
-            <span style={{fontSize:'10px',color:'#444',background:'#1a1a1a',border:'1px solid #2a2a2a',padding:'2px 6px',borderRadius:'4px'}}>⌘K</span>
-          </button>
-
-          {/* Nav */}
-          <a href="#" style={c.navItem(true)}>🏠 Home</a>
-          <a href="#" style={c.navItem(false)}>🧭 Discover</a>
-          <a href="#" style={c.navItem(false)}>📚 Library</a>
-
-          {/* Recent */}
-          <span style={c.sectionLabel}>Recent</span>
-          {recentSearches.map((text, i) => (
-            <a key={i} href="#" style={c.recentItem}
-              onClick={(e) => { e.preventDefault(); setInput(text); handleSearch(text) }}
-              onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
-              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-              💬 <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{text}</span>
-            </a>
           ))}
-          <a href="#" style={{...c.recentItem, color:'#444', marginTop:'4px'}}>View all →</a>
-
-          {/* Connectors */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 12px',marginTop:'16px',marginBottom:'6px'}}>
-            <span style={{color:'#444',fontSize:'11px',letterSpacing:'0.08em',textTransform:'uppercase'}}>Connectors</span>
-            <span style={{color:'#555',fontSize:'14px',cursor:'pointer'}} title="Add connector">+</span>
-          </div>
-
-          {connectors.map((conn, i) => (
-            <a key={i} href="#"
-              style={{...c.recentItem, color: conn.color}}
-              onClick={(e) => {
-                e.preventDefault()
-                const url = input.trim() ? conn.searchUrl(input.trim()) : conn.url
-                window.open(url, '_blank')
-              }}
-              onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
-              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-              <span style={{width:'20px',height:'20px',background:'#1a1a1a',borderRadius:'5px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'11px',flexShrink:0,border:'1px solid #2a2a2a'}}>
-                {conn.icon}
-              </span>
-              <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{conn.name}</span>
-            </a>
-          ))}
-          <a href="#" style={{...c.recentItem, color:'#444'}}
-            onMouseEnter={e => e.currentTarget.style.background='#1a1a1a'}
-            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-            ••• More
-          </a>
         </div>
 
         {/* Upgrade */}
-        <div style={c.upgradeBox}>
-          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
-            <div>
-              <div style={{display:'flex',alignItems:'center',gap:'6px',color:'#fbbf24',fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}>
-                <span>👑</span> Upgrade to Stoic Pro
-              </div>
-              <p style={{fontSize:'11px',color:'#52525b',margin:0}}>Unlock more power and higher usage limits.</p>
-            </div>
-            <span style={{color:'#444',fontSize:'11px'}}>▶</span>
+        <div style={{ marginTop: 'auto', padding: '20px 16px' }}>
+          <div style={{ background: '#1F1F1F', borderRadius: '12px', padding: '16px', border: '1px solid #333' }}>
+            <div style={{ fontWeight: '500', marginBottom: '4px' }}>Upgrade to Stoic Pro</div>
+            <div style={{ fontSize: '12px', color: '#888' }}>Unlock more power and higher limits.</div>
           </div>
         </div>
-      </aside>
+      </div>
 
-      {/* MAIN */}
-      <main style={c.main}>
+      {/* Main Area */}
+      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Topbar */}
-        <div style={c.topbar}>
-          <span style={{fontSize:'18px',color:'#444',cursor:'pointer'}}>☀️</span>
-          <button style={c.signInBtn}>Sign In</button>
+        {/* Top Bar */}
+        <div style={{ position: 'absolute', top: '20px', right: '30px', zIndex: 10 }}>
+          <button style={{ background: '#fff', color: '#000', padding: '8px 20px', borderRadius: '9999px', fontSize: '14px' }}>Sign In</button>
         </div>
 
-        {/* Content */}
-        <div style={c.content}>
-
-          {/* HOME */}
+        {/* Hero / Search */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
           {!answer && !loading && (
-            <div style={c.heroSection}>
-              <StingrayLogo size={112}/>
-              <h1 style={c.heroTitle}>Stoic</h1>
-              <p style={c.heroSub}>Think clearly. <span style={{color:'#d4b896'}}>Move forward.</span></p>
-
-              {/* Search box */}
-              <div style={c.searchCard}>
-                <textarea
-                  rows={2}
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); handleSearch(input) }}}
-                  placeholder="Ask anything..."
-                  autoFocus
-                  style={c.searchTextarea}
-                />
-                <div style={c.searchBottom}>
-                  <div style={{display:'flex',gap:'4px'}}>
-                    {['+','🌐','💡','•••'].map((icon,i) => <button key={i} style={c.toolBtn}>{icon}</button>)}
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <button onClick={handleMic} style={{...c.toolBtn, color: listening?'#a855f7':'#52525b'}}>🎙️</button>
-                    <button onClick={() => handleSearch(input)} style={c.sendBtn}>➔</button>
-                  </div>
-                </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ marginBottom: '30px' }}>
+                <svg width="130" height="130" viewBox="0 0 100 100" fill="#E5E5E5">
+                  <path d="M50 15 Q30 40 15 55 Q35 65 50 85 Q65 65 85 55 Q70 40 50 15Z" />
+                </svg>
               </div>
-
-              {/* Model selector */}
-              <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',marginBottom:'16px'}}>
-                {models.map(m => <button key={m.id} onClick={() => setModel(m.id)} style={c.modelPill(model===m.id, m.color)}>{m.label}</button>)}
-              </div>
-
-              {/* Quick actions */}
-              <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',marginBottom:'32px'}}>
-                {quickActions.map((a,i) => (
-                  <button key={i} style={c.quickBtn}
-                    onClick={() => setInput(a.label + ' ')}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor='#333'; e.currentTarget.style.color='#e5e5e5' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor='#1a1a1a'; e.currentTarget.style.color='#71717a' }}>
-                    {a.icon} {a.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div style={c.footer}>
-                <span>Stoic is powered by advanced AI.</span>
-                <span style={{color:'#27272a'}}>|</span>
-                <span>🔒 Your data is private and secure.</span>
-              </div>
-            </div>
-          )}
-
-          {/* LOADING */}
-          {loading && (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:'80px',color:'#52525b'}}>
-              <div style={{fontSize:'32px',marginBottom:'16px'}}>🔍</div>
-              <p>Searching with {models.find(m=>m.id===model)?.label}...</p>
-            </div>
-          )}
-
-          {error && <p style={{color:'#f87171',textAlign:'center'}}>{error}</p>}
-
-          {/* ANSWER */}
-          {answer && (
-            <div ref={answerRef} style={c.answerSection}>
-              <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'16px'}}>
-                <h2 style={{color:'#fff',margin:0,fontSize:'20px',fontFamily:'Georgia,serif'}}>{query}</h2>
-                <span style={{fontSize:'11px',color:'#52525b',background:'#111',border:'1px solid #1a1a1a',borderRadius:'6px',padding:'2px 8px'}}>{models.find(m=>m.id===model)?.label}</span>
-              </div>
-              <div style={c.answerCard}>{answer}</div>
-              {sources.length > 0 && (
-                <div style={{marginBottom:'16px'}}>
-                  <span style={c.sourceLabel}>Sources</span>
-                  <div>{sources.map((s,i) => <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={c.sourceChip}>[{i+1}] {s.title}</a>)}</div>
-                </div>
-              )}
-              {related.length > 0 && (
-                <div style={{marginBottom:'32px'}}>
-                  <span style={c.sourceLabel}>Related</span>
-                  {related.map((q,i) => <button key={i} style={c.relatedBtn}
-                    onClick={() => { setInput(q); handleSearch(q) }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor='#333'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor='#1a1a1a'}>{q}</button>)}
-                </div>
-              )}
+              <h1 style={{ fontSize: '52px', fontWeight: '400', letterSpacing: '-1px' }}>Stoic</h1>
+              <p style={{ color: '#888', fontSize: '19px' }}>Think clearly. Move forward.</p>
             </div>
           )}
         </div>
 
-        {/* BOTTOM SEARCH */}
-        {(answer || loading) && (
-          <div style={c.bottomBar}>
-            <div style={{maxWidth:'720px',margin:'0 auto'}}>
-              <div style={c.searchCard}>
-                <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); handleSearch(input) }}}
-                  placeholder="Ask anything..." style={c.searchTextarea}/>
-                <div style={c.searchBottom}>
-                  <div style={{display:'flex',gap:'4px'}}>
-                    {models.map(m => <button key={m.id} onClick={() => setModel(m.id)} style={c.modelPill(model===m.id, m.color)}>{m.label}</button>)}
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <button onClick={handleMic} style={{...c.toolBtn, color: listening?'#a855f7':'#52525b'}}>🎙️</button>
-                    <button onClick={() => handleSearch(input)} style={c.sendBtn}>➔</button>
-                  </div>
-                </div>
-              </div>
+        {/* Search Bar */}
+        <div style={{ position: 'absolute', bottom: '80px', left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '680px', padding: '0 20px' }}>
+          <div style={{ background: '#18181B', border: '1px solid #3F3F46', borderRadius: '20px', padding: '8px' }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSearch()}
+              placeholder="Ask anything..."
+              style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', padding: '16px 24px', fontSize: '17px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 12px 12px' }}>
+              <button onClick={handleSearch} style={{ background: '#E5E5E5', color: '#0A0A0A', width: '44px', height: '44px', borderRadius: '12px', fontSize: '20px' }}>→</button>
             </div>
+          </div>
+        </div>
+
+        {/* Answer Area */}
+        {(answer || loading) && (
+          <div style={{ position: 'absolute', inset: 0, background: '#0A0A0A', padding: '100px 40px', overflow: 'auto' }}>
+            {loading && <div style={{ textAlign: 'center', fontSize: '18px' }}>Searching...</div>}
+            {answer && (
+              <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+                <h2 style={{ fontSize: '28px', marginBottom: '20px' }}>{query}</h2>
+                <div style={{ lineHeight: '1.8', fontSize: '17px' }}>{answer}</div>
+
+                {sources.length > 0 && (
+                  <div style={{ marginTop: '40px' }}>
+                    <div style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>SOURCES</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      {sources.map((s, i) => (
+                        <a key={i} href={s.url} target="_blank" style={{ background: '#1F1F1F', padding: '10px 16px', borderRadius: '12px', fontSize: '14px', color: '#60A5FA' }}>
+                          [{i+1}] {s.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-      </main>
+      </div>
     </div>
-  )
+  );
 }
