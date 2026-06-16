@@ -1,5 +1,4 @@
 import { useState, useRef } from "react"
-import "./Home.css"
 
 const API_BASE = 'https://cloud9-api-2.onrender.com'
 
@@ -15,18 +14,26 @@ export default function Home() {
   const [listening, setListening] = useState(false)
   const answerRef = useRef(null)
 
+  const models = [
+    { id: "groq", label: "Llama 3.3", color: "#f97316" },
+    { id: "deepseek", label: "DeepSeek", color: "#3b82f6" },
+    { id: "gemini", label: "Gemini Flash", color: "#10b981" },
+  ]
+
   const recentSearches = [
     "What is quantum computing?",
     "Best habits for productivity",
     "Explain photosynthesis",
-    "Latest AI breakthroughs 2026",
-    "How does blockchain work?",
+    "Startup ideas for 2024",
+    "How does AI work?",
   ]
 
-  const models = [
-    { id: "groq", label: "⚡ Llama 3.3", color: "#f97316" },
-    { id: "deepseek", label: "🐋 DeepSeek", color: "#3b82f6" },
-    { id: "gemini", label: "✨ Gemini Flash", color: "#10b981" },
+  const quickActions = [
+    { label: 'Research', icon: '🔍' },
+    { label: 'Deep Search', icon: '👁️' },
+    { label: 'Create Image', icon: '🖼️' },
+    { label: 'Code', icon: '💻' },
+    { label: 'Analyze', icon: '📊' },
   ]
 
   const handleSearch = (q) => {
@@ -58,141 +65,230 @@ export default function Home() {
   }
 
   const handleMic = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      alert("Speech recognition not supported in this browser.")
-      return
-    }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    const recognition = new SR()
-    recognition.lang = 'en-US'
-    recognition.onstart = () => setListening(true)
-    recognition.onend = () => setListening(false)
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript
-      setInput(transcript)
-      handleSearch(transcript)
-    }
-    recognition.start()
+    if (!SR) return
+    const r = new SR()
+    r.lang = 'en-US'
+    r.onstart = () => setListening(true)
+    r.onend = () => setListening(false)
+    r.onresult = (e) => { const t = e.results[0][0].transcript; setInput(t); handleSearch(t) }
+    r.start()
   }
 
-  const quickActions = [
-    { label: "🔍 Research", q: "Research about " },
-    { label: "🌐 Deep Search", q: "Deep search on " },
-    { label: "🖼️ Create Image", q: "Create image of " },
-    { label: "</> Code", q: "Write code for " },
-    { label: "📊 Analyze", q: "Analyze " },
-  ]
-
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div className="flex h-screen bg-[#0A0A0A] text-[#E5E5E5] font-sans antialiased w-screen overflow-hidden">
 
       {/* SIDEBAR */}
-      <div style={{ width: '260px', background: '#111', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', padding: '16px 12px', gap: '8px', flexShrink: 0 }}>
+      <aside className="w-[260px] border-r border-zinc-900 bg-[#0A0A0A] flex flex-col justify-between p-3 shrink-0 h-full">
+        <div className="space-y-6">
 
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '8px' }}>
-          <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>✦</div>
-          <span style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.5px' }}>STOIC</span>
-        </div>
-
-        {/* New Chat */}
-        <button onClick={() => { setAnswer(""); setQuery(""); setInput("") }} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '500', width: '100%', textAlign: 'left' }}>
-          <span style={{ fontSize: '18px' }}>+</span> New Chat <span style={{ marginLeft: 'auto', color: '#444', fontSize: '12px' }}>⌘K</span>
-        </button>
-
-        {/* Nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '8px' }}>
-          {[{ icon: '🏠', label: 'Home' }, { icon: '🌐', label: 'Discover' }, { icon: '🔖', label: 'Library' }].map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', cursor: 'pointer', color: i === 0 ? '#fff' : '#666', background: i === 0 ? '#1a1a1a' : 'transparent', fontSize: '14px' }}>
-              {item.icon} {item.label}
+          {/* Logo */}
+          <div className="flex items-center justify-between px-2 py-1">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 text-zinc-300">
+                <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
+                  <path d="M50,15 C47,15 32,45 10,55 C35,55 45,75 50,90 C55,75 65,55 90,55 C68,45 53,15 50,15 Z"/>
+                </svg>
+              </div>
+              <span className="font-semibold text-lg tracking-wider text-zinc-200 uppercase">Stoic</span>
             </div>
-          ))}
-        </div>
+            <button className="text-zinc-500 hover:text-zinc-300 p-1 rounded hover:bg-zinc-900 text-xs">◀</button>
+          </div>
 
-        {/* Recent */}
-        <div style={{ marginTop: '16px' }}>
-          <p style={{ color: '#444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 12px', marginBottom: '6px' }}>Recent</p>
-          {recentSearches.map((s, i) => (
-            <div key={i} onClick={() => { setInput(s); handleSearch(s) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', color: '#888', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              💬 {s}
+          {/* New Chat */}
+          <button className="w-full bg-[#121212] hover:bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition flex items-center justify-between px-3 py-2 rounded-lg text-sm text-zinc-300"
+            onClick={() => { setAnswer(""); setQuery(""); setInput("") }}>
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-400">+</span>
+              <span>New Chat</span>
             </div>
-          ))}
-        </div>
+            <kbd className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded font-mono">⌘ K</kbd>
+          </button>
 
-        {/* Bottom upgrade */}
-        <div style={{ marginTop: 'auto', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>💎</span>
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>Upgrade to Stoic Pro</p>
-              <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>Unlock more power</p>
+          {/* Nav */}
+          <nav className="space-y-1">
+            <a href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#171717] text-white text-sm font-medium">🏠 Home</a>
+            <a href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 text-sm">🧭 Discover</a>
+            <a href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 text-sm">📚 Library</a>
+          </nav>
+
+          {/* Recent */}
+          <div className="space-y-1">
+            <span className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider px-3 block mb-2">Recent</span>
+            {recentSearches.map((text, idx) => (
+              <a key={idx} href="#" onClick={() => { setInput(text); handleSearch(text) }}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 text-sm truncate">
+                💬 <span className="truncate">{text}</span>
+              </a>
+            ))}
+            <button className="w-full flex items-center justify-between px-3 py-1.5 text-zinc-500 hover:text-zinc-300 text-xs mt-1">
+              <span>View all</span><span>▶</span>
+            </button>
+          </div>
+
+          {/* Connectors */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between px-3 mb-2">
+              <span className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider">Connectors</span>
+              <span className="text-zinc-500 text-xs cursor-pointer hover:text-zinc-300">+</span>
             </div>
-            <span style={{ marginLeft: 'auto', color: '#666' }}>→</span>
+            {[{ name: 'GitHub' }, { name: 'Slack' }, { name: 'Notion' }, { name: 'Google Drive' }].map((app, idx) => (
+              <a key={idx} href="#" className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 text-sm">
+                <div className="w-4 h-4 rounded-sm bg-zinc-800 flex items-center justify-center text-[10px] font-bold">{app.name[0]}</div>
+                <span>{app.name}</span>
+              </a>
+            ))}
+            <button className="flex items-center gap-2.5 px-3 py-1.5 text-zinc-500 hover:text-zinc-300 text-sm">••• More</button>
           </div>
         </div>
-      </div>
 
-      {/* MAIN AREA */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-        {/* Top bar */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid #1a1a1a' }}>
-          <button style={{ background: 'transparent', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '6px 16px', cursor: 'pointer', fontSize: '14px' }}>Sign In</button>
+        {/* Upgrade */}
+        <div className="border border-zinc-800/80 bg-gradient-to-b from-zinc-900/50 to-zinc-950/50 p-3.5 rounded-xl cursor-pointer hover:border-zinc-700/80 transition">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-amber-400 font-medium text-sm">
+                <span>👑</span><span>Upgrade to Stoic Pro</span>
+              </div>
+              <p className="text-xs text-zinc-500">Unlock more power and higher usage limits.</p>
+            </div>
+            <span className="text-zinc-500 text-xs">▶</span>
+          </div>
         </div>
+      </aside>
+
+      {/* MAIN */}
+      <main className="flex-1 flex flex-col relative bg-[#070707] h-full overflow-hidden">
+
+        {/* Topbar */}
+        <header className="flex items-center justify-end p-4 gap-4 absolute top-0 right-0 left-0 z-20">
+          <button className="text-zinc-400 hover:text-zinc-200 p-2 rounded-full hover:bg-zinc-900/50">☀️</button>
+          <button className="bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs px-4 py-2 rounded-lg shadow-sm">Sign In</button>
+        </header>
 
         {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 160px' }}>
+        <div className="flex-1 overflow-y-auto flex flex-col items-center px-4 pt-16 pb-8">
 
-          {/* Home screen */}
+          {/* HOME SCREEN */}
           {!answer && !loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-              <div style={{ fontSize: '64px', marginBottom: '16px' }}>✦</div>
-              <h1 style={{ fontSize: '3rem', fontWeight: '700', margin: '0 0 8px', letterSpacing: '-1px' }}>Stoic</h1>
-              <p style={{ color: '#666', fontSize: '1.1rem', margin: '0 0 40px' }}>Think clearly. <span style={{ color: '#a855f7' }}>Move forward.</span></p>
+            <div className="flex flex-col items-center justify-center w-full max-w-[720px] mx-auto mt-8">
+              <div className="w-28 h-28 text-zinc-300 mb-2">
+                <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full drop-shadow-lg">
+                  <path d="M50,15 C47,15 32,45 10,55 C35,55 45,75 50,90 C55,75 65,55 90,55 C68,45 53,15 50,15 Z" fill="url(#silverGrad)"/>
+                  <defs>
+                    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ffffff"/>
+                      <stop offset="50%" stopColor="#a3a3a3"/>
+                      <stop offset="100%" stopColor="#404040"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h1 className="text-5xl font-serif font-normal tracking-wide text-white mb-2.5">Stoic</h1>
+              <p className="text-sm tracking-wide text-zinc-500 mb-8">Think clearly. <span className="text-amber-200/70">Move forward.</span></p>
+
+              {/* Search box */}
+              <div className="w-full bg-[#0F0F0F] border border-zinc-800/80 rounded-2xl p-4 shadow-2xl focus-within:border-zinc-700/80 transition-all mb-5">
+                <textarea
+                  rows={2}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSearch(input))}
+                  placeholder="Ask anything..."
+                  autoFocus
+                  className="w-full bg-transparent resize-none outline-none text-zinc-200 placeholder-zinc-600 text-[15px] leading-relaxed border-0 focus:ring-0 p-0"
+                />
+                <div className="flex items-center justify-between mt-3 pt-1">
+                  <div className="flex items-center gap-1.5">
+                    <button className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 rounded-lg text-sm">+</button>
+                    <button className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 rounded-lg text-sm">🌐</button>
+                    <button className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 rounded-lg text-sm">💡</button>
+                    <button className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 rounded-lg text-sm">•••</button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleMic} className={`p-2 hover:bg-zinc-900 rounded-lg text-sm ${listening ? 'text-purple-400' : 'text-zinc-500 hover:text-zinc-300'}`}>🎙️</button>
+                    <button onClick={() => handleSearch(input)} className="w-8 h-8 flex items-center justify-center bg-zinc-200 hover:bg-white text-zinc-950 rounded-full text-xs font-bold">➔</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Model selector */}
+              <div className="flex items-center gap-2 mb-4 flex-wrap justify-center">
+                {models.map(m => (
+                  <button key={m.id} onClick={() => setModel(m.id)}
+                    style={{ borderColor: model === m.id ? m.color : '#27272a', color: model === m.id ? m.color : '#71717a', background: model === m.id ? `${m.color}15` : 'transparent' }}
+                    className="px-3 py-1 rounded-full border text-xs transition">
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Quick actions */}
+              <div className="flex items-center justify-center flex-wrap gap-2 mb-8">
+                {quickActions.map((pill, i) => (
+                  <button key={i} onClick={() => setInput(pill.label + ' ')}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F0F0F] border border-zinc-900 hover:border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 transition">
+                    <span className="text-zinc-500 text-[11px]">{pill.icon}</span>
+                    <span>{pill.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center gap-3 text-[11px] text-zinc-600">
+                <span>Stoic is powered by advanced AI.</span>
+                <span className="text-zinc-800">|</span>
+                <span>🔒 Your data is private and secure.</span>
+              </div>
             </div>
           )}
 
+          {/* LOADING */}
           {loading && (
-            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#666' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
+            <div className="flex flex-col items-center justify-center flex-1 text-zinc-500 mt-20">
+              <div className="text-3xl mb-4">🔍</div>
               <p>Searching with {models.find(m => m.id === model)?.label}...</p>
             </div>
           )}
 
-          {error && <p style={{ color: '#f87171', textAlign: 'center' }}>Error: {error}</p>}
+          {error && <p className="text-red-400 text-center mt-8">{error}</p>}
 
+          {/* ANSWER */}
           {answer && (
-            <div ref={answerRef} style={{ maxWidth: '760px', margin: '2rem auto 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ color: '#fff', margin: 0, fontSize: '1.4rem' }}>{query}</h2>
-                <span style={{ fontSize: '0.75rem', color: '#888', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '2px 8px' }}>
+            <div ref={answerRef} className="w-full max-w-[720px] mx-auto pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-white text-xl font-serif">{query}</h2>
+                <span className="text-[11px] text-zinc-500 bg-zinc-900 border border-zinc-800 rounded px-2 py-0.5">
                   {models.find(m => m.id === model)?.label}
                 </span>
               </div>
 
-              <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '1.5rem', lineHeight: '1.9', marginBottom: '1.5rem', color: '#ddd', fontSize: '0.95rem' }}>
+              <div className="bg-[#0F0F0F] border border-zinc-800/80 rounded-2xl p-6 text-zinc-300 leading-relaxed text-[15px] mb-4">
                 {answer}
               </div>
 
               {sources.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ color: '#555', fontSize: '0.75rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sources</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div className="mb-4">
+                  <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">Sources</p>
+                  <div className="flex flex-wrap gap-2">
                     {sources.map((s, i) => (
-                      <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', padding: '0.5rem 0.75rem', color: '#a5b4fc', fontSize: '0.8rem', textDecoration: 'none' }}>[{i+1}] {s.title}</a>
+                      <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                        className="bg-[#0F0F0F] border border-zinc-800 rounded-lg px-3 py-1.5 text-indigo-400 text-xs hover:border-zinc-700 transition">
+                        [{i+1}] {s.title}
+                      </a>
                     ))}
                   </div>
                 </div>
               )}
 
               {related.length > 0 && (
-                <div>
-                  <h3 style={{ color: '#555', fontSize: '0.75rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Related</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="mb-8">
+                  <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">Related</p>
+                  <div className="flex flex-col gap-2">
                     {related.map((q, i) => (
-                      <button key={i} onClick={() => { setInput(q); handleSearch(q) }} style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '0.75rem 1rem', color: '#ccc', fontSize: '0.9rem', textAlign: 'left', cursor: 'pointer' }}>{q}</button>
+                      <button key={i} onClick={() => { setInput(q); handleSearch(q) }}
+                        className="bg-[#0F0F0F] border border-zinc-800 rounded-xl px-4 py-3 text-zinc-300 text-sm text-left hover:border-zinc-700 transition">
+                        {q}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -201,57 +297,39 @@ export default function Home() {
           )}
         </div>
 
-        {/* FIXED BOTTOM SEARCH */}
-        <div style={{ position: 'fixed', bottom: 0, left: '260px', right: 0, background: '#0a0a0a', padding: '16px 24px', borderTop: '1px solid #1a1a1a', zIndex: 100 }}>
-          <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-
-            {/* Search box */}
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '12px 16px', marginBottom: '12px' }}>
-              <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSearch(input)}
-                placeholder="Ask anything..."
-                autoFocus
-                style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: '1rem', marginBottom: '12px' }}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {[{icon:'＋',tip:'Attach'},{icon:'🌐',tip:'Web'},{icon:'💡',tip:'Ideas'},{icon:'···',tip:'More'}].map((btn, i) => (
-                    <button key={i} title={btn.tip} style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', padding: '6px 8px', borderRadius: '6px', fontSize: '14px' }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                      onMouseLeave={e => e.currentTarget.style.color = '#555'}>
-                      {btn.icon}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button onClick={handleMic} style={{ background: 'transparent', border: 'none', color: listening ? '#a855f7' : '#555', cursor: 'pointer', fontSize: '18px', padding: '6px' }}>🎤</button>
-                  <button onClick={() => handleSearch(input)} style={{ background: '#fff', border: 'none', color: '#000', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>→</button>
+        {/* FIXED BOTTOM SEARCH - shows after search */}
+        {(answer || loading) && (
+          <div className="border-t border-zinc-900 bg-[#070707] px-6 py-3">
+            <div className="max-w-[720px] mx-auto">
+              <div className="w-full bg-[#0F0F0F] border border-zinc-800/80 rounded-2xl p-4 focus-within:border-zinc-700/80 transition-all">
+                <textarea
+                  rows={1}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSearch(input))}
+                  placeholder="Ask anything..."
+                  className="w-full bg-transparent resize-none outline-none text-zinc-200 placeholder-zinc-600 text-[15px] leading-relaxed border-0 focus:ring-0 p-0"
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-1.5">
+                    {models.map(m => (
+                      <button key={m.id} onClick={() => setModel(m.id)}
+                        style={{ borderColor: model === m.id ? m.color : '#27272a', color: model === m.id ? m.color : '#71717a', background: model === m.id ? `${m.color}15` : 'transparent' }}
+                        className="px-2.5 py-0.5 rounded-full border text-[11px] transition">
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleMic} className={`p-2 hover:bg-zinc-900 rounded-lg text-sm ${listening ? 'text-purple-400' : 'text-zinc-500'}`}>🎙️</button>
+                    <button onClick={() => handleSearch(input)} className="w-8 h-8 flex items-center justify-center bg-zinc-200 hover:bg-white text-zinc-950 rounded-full text-xs font-bold">➔</button>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Model selector + quick actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {models.map(m => (
-                <button key={m.id} onClick={() => setModel(m.id)} style={{ padding: '5px 12px', borderRadius: '20px', border: `1px solid ${model === m.id ? m.color : '#2a2a2a'}`, background: model === m.id ? `${m.color}22` : 'transparent', color: model === m.id ? m.color : '#555', fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.2s' }}>
-                  {m.label}
-                </button>
-              ))}
-              <div style={{ width: '1px', height: '16px', background: '#2a2a2a', margin: '0 4px' }} />
-              {quickActions.map((a, i) => (
-                <button key={i} onClick={() => { setInput(a.q); }} style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid #2a2a2a', background: 'transparent', color: '#555', fontSize: '0.78rem', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#555' }}>
-                  {a.label}
-                </button>
-              ))}
-            </div>
-
           </div>
-        </div>
-      </div>
+        )}
+      </main>
     </div>
   )
 }
