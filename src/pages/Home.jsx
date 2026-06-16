@@ -8,6 +8,7 @@ export default function Home() {
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
   const answerRef = useRef(null);
 
   const handleSearch = async () => {
@@ -30,6 +31,24 @@ export default function Home() {
     }
     setLoading(false);
     setTimeout(() => answerRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
+  const handleMic = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert("Voice input not supported.");
+      return;
+    }
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setInput(transcript);
+      handleSearch(transcript);
+    };
+    recognition.start();
   };
 
   return (
@@ -125,12 +144,39 @@ export default function Home() {
                 style={styles.searchInput}
               />
               <div style={styles.searchActions}>
+                {/* Plus Icon - file upload */}
+                <button
+                  onClick={() => document.getElementById('fileInput')?.click()}
+                  style={styles.iconButton}
+                  title="Upload files"
+                >
+                  <PlusIcon />
+                </button>
+                <input
+                  id="fileInput"
+                  type="file"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={(e) => console.log(e.target.files)}
+                />
+                {/* Mic Icon */}
+                <button
+                  onClick={handleMic}
+                  style={{
+                    ...styles.iconButton,
+                    color: listening ? '#14B8A6' : '#A1A1AA',
+                  }}
+                  title="Voice input"
+                >
+                  <MicIcon />
+                </button>
+                {/* Up Arrow / Stop button */}
                 <button
                   onClick={handleSearch}
                   style={styles.searchButton}
                   disabled={loading}
                 >
-                  {loading ? <StopIcon /> : <ArrowIcon />}
+                  {loading ? <StopIcon /> : <UpArrowIcon />}
                 </button>
               </div>
             </div>
@@ -189,16 +235,36 @@ const ImagineIcon = () => (
   </svg>
 );
 
-const ArrowIcon = () => (
+// Up Arrow Icon (pointing up)
+const UpArrowIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
   </svg>
 );
 
+// Stop Icon (square)
 const StopIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <rect x="6" y="6" width="12" height="12" />
+  </svg>
+);
+
+// Plus Icon
+const PlusIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+// Mic Icon
+const MicIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
   </svg>
 );
 
@@ -415,7 +481,19 @@ const styles = {
   searchActions: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '6px',
+  },
+  iconButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#A1A1AA',
+    cursor: 'pointer',
+    padding: '8px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'color 0.2s, background 0.2s',
   },
   searchButton: {
     background: '#E5E5E5',
