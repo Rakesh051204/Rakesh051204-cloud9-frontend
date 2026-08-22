@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud9 — Search, Elevated</title>
+
+    <!-- ███ Kill only borders/outlines/shadows – NOT backgrounds ███ -->
+    <style>
+      /* Target the search container and everything inside it */
+      .search-container,
+      .search-container *,
+      .search-container input,
+      .search-container textarea,
+      .search-container button,
+      .search-container div,
+      .search-container span,
+      .max-w-3xl.w-full.text-center *,
+      .max-w-3xl.w-full.text-center,
+      .relative.w-full.max-w-\[720px\] *,
+      .relative.w-full.max-w-\[720px\] {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        /* ✅ REMOVED background: transparent !important; – so the dark box stays! */
+      }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

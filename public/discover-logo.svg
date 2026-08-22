@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stoic logo">
+  <title>Stoic logo</title>
+  <desc>Spiral iris mark with alternating black and white ring bands, five concentric rings progressively offset to one side, converging on a small white dot.</desc>
+
+  <rect x="0" y="0" width="512" height="512" fill="#1A1A1A"/>
+
+  <defs>
+    <mask id="ring1">
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="256" cy="256" r="168" fill="white"/>
+      <circle cx="276" cy="256" r="137" fill="black"/>
+    </mask>
+    <mask id="ring2">
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="276" cy="256" r="137" fill="white"/>
+      <circle cx="294" cy="256" r="107" fill="black"/>
+    </mask>
+    <mask id="ring3">
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="294" cy="256" r="107" fill="white"/>
+      <circle cx="310" cy="256" r="77" fill="black"/>
+    </mask>
+    <mask id="ring4">
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="310" cy="256" r="77" fill="white"/>
+      <circle cx="324" cy="256" r="47" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Ring 1: white -->
+  <circle cx="256" cy="256" r="168" fill="#FFFFFF" mask="url(#ring1)"/>
+  <!-- Ring 2: black -->
+  <circle cx="276" cy="256" r="137" fill="#000000" mask="url(#ring2)"/>
+  <!-- Ring 3: white -->
+  <circle cx="294" cy="256" r="107" fill="#FFFFFF" mask="url(#ring3)"/>
+  <!-- Ring 4: black -->
+  <circle cx="310" cy="256" r="77" fill="#000000" mask="url(#ring4)"/>
+  <!-- Core dot: white -->
+  <circle cx="324" cy="256" r="22" fill="#FFFFFF"/>
+
+  <!-- Outer edge outline so the white ring1 stays visible against the canvas if placed on white -->
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+</svg>

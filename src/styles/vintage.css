@@ -1,0 +1,195 @@
+/* src/styles/vintage.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Special+Elite&display=swap');
+
+.vintage-wrapper {
+  background: #f4efe6;
+  color: #3d2e1e;
+  font-family: 'Inter', sans-serif;
+}
+
+.vintage-header {
+  font-family: 'Playfair Display', serif;
+  border-bottom: 3px double #8b7a66;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.vintage-header h1 {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #2c1f12;
+  text-shadow: 1px 1px 0 rgba(139, 122, 102, 0.2);
+}
+
+.vintage-header .date {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.9rem;
+  color: #6b5b4a;
+  letter-spacing: 0.05em;
+  border-top: 1px solid #d4c5b2;
+  padding-top: 0.25rem;
+}
+
+.vintage-header .issue {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.8rem;
+  color: #6b5b4a;
+}
+
+.vintage-tagline {
+  font-family: 'Playfair Display', italic;
+  font-size: 0.95rem;
+  color: #6b5b4a;
+  border-bottom: 1px solid #d4c5b2;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+/* Newspaper Article Card */
+.vintage-article {
+  background: #f9f5ee;
+  border: 1px solid #d4c5b2;
+  border-radius: 0;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.vintage-article:hover {
+  transform: scale(1.005);
+  border-color: #b8a48c;
+}
+
+.vintage-article .article-image {
+  border-bottom: 2px solid #d4c5b2;
+  filter: sepia(0.3) contrast(1.05) brightness(0.98);
+}
+
+.vintage-article .article-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  line-height: 1.3;
+  color: #2c1f12;
+  margin-bottom: 0.5rem;
+}
+
+.vintage-article .article-meta {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.75rem;
+  color: #6b5b4a;
+  border-bottom: 1px dashed #d4c5b2;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vintage-article .article-description {
+  font-family: 'Inter', serif;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #3d2e1e;
+}
+
+.vintage-article .article-description::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.2rem;
+  font-weight: 700;
+  float: left;
+  line-height: 1;
+  margin-right: 0.3rem;
+  color: #8b7a66;
+}
+
+.vintage-article .article-footer {
+  border-top: 1px dashed #d4c5b2;
+  padding-top: 0.6rem;
+  margin-top: 0.8rem;
+  font-family: 'Special Elite', cursive;
+  font-size: 0.75rem;
+  color: #6b5b4a;
+}
+
+.vintage-article .article-footer .likes {
+  color: #3d2e1e;
+}
+
+.vintage-sidebar {
+  background: #f9f5ee;
+  border: 1px solid #d4c5b2;
+  border-radius: 0;
+  padding: 1.25rem;
+}
+
+.vintage-sidebar h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2c1f12;
+  border-bottom: 2px solid #d4c5b2;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.vintage-sidebar .widget-item {
+  border-bottom: 1px solid #e8ddd0;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.vintage-sidebar .widget-item:last-child {
+  border-bottom: none;
+}
+
+.vintage-weather {
+  font-family: 'Inter', serif;
+}
+
+.vintage-weather .temp {
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: #2c1f12;
+}
+
+.vintage-weather .forecast-day {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #6b5b4a;
+}
+
+.vintage-category-tab {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.85rem;
+  background: #f9f5ee;
+  border: 1px solid #d4c5b2;
+  color: #3d2e1e;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  transition: all 0.15s;
+}
+
+.vintage-category-tab.active {
+  background: #d4c5b2;
+  color: #2c1f12;
+  border-color: #b8a48c;
+}
+
+.vintage-category-tab:hover {
+  background: #e8ddd0;
+}
+
+.vintage-button {
+  font-family: 'Special Elite', cursive;
+  background: #d4c5b2;
+  border: 1px solid #b8a48c;
+  color: #2c1f12;
+  padding: 0.4rem 1.2rem;
+  border-radius: 20px;
+  transition: all 0.15s;
+}
+
+.vintage-button:hover {
+  background: #b8a48c;
+  border-color: #a08a74;
+}

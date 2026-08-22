@@ -1,0 +1,143 @@
+/* src/components/discover/DiscoverFeed.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  background: #0F0F0E;
+  min-height: 100vh;
+  color: #E8E6E1;
+}
+
+.subNav {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #23231F;
+  position: sticky;
+  top: 0;
+  background: #0F0F0E;
+  z-index: 10;
+}
+
+.subNavItem {
+  background: none;
+  border: none;
+  color: #8A8880;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 2px;
+  cursor: pointer;
+  position: relative;
+}
+
+.subNavItemActive {
+  color: #E8E6E1;
+}
+
+.subNavItemActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #7C83DB;
+  border-radius: 2px;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+.card {
+  display: flex;
+  gap: 14px;
+  padding: 16px 8px;
+  border-bottom: 1px solid #1A1A18;
+}
+
+.cardImagePlaceholder {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 8px;
+  background: #141413;
+  border: 1px solid #23231F;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8A8880;
+}
+
+.dot {
+  opacity: 0.6;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  color: #E8E6E1;
+}
+
+.snippet {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #A8A69F;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.loadingRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: #8A8880;
+  font-size: 13px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #23231F;
+  border-top-color: #7C83DB;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.endMessage {
+  text-align: center;
+  padding: 24px 0;
+  color: #6B6963;
+  font-size: 13px;
+}
+
+.sentinel {
+  height: 1px;
+}

@@ -1,0 +1,3 @@
+import TestVoice from "./pages/TestVoice";
+// ...
+<Route path="/" element={<TestVoice />} />

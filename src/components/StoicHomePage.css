@@ -1,0 +1,476 @@
+/* ------------------------------------------------------------------ */
+/* Stoic — void & clay design tokens                                   */
+/* Clay is reserved strictly for: thinking pulse, send button, avatar   */
+/* ------------------------------------------------------------------ */
+.stoic-shell {
+  --void: #000000;              /* Grok-style pure black page bg */
+  --surface-1: #0F0F0E;         /* raised panels */
+  --surface-2: #141413;         /* sidebar / cards */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --text-primary: #EDEDEC;
+  --text-secondary: #9A9A96;
+  --text-muted: #6B6B67;
+
+  --clay: #F5A623;              /* accent — reserved: send button, avatar, pulse */
+  --periwinkle: #7C83DB;        /* primary sidebar action */
+  --mauve: #C97B96;
+  --cyan: #5FB8D6;
+
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--text-primary);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ---------------- Sidebar ---------------- */
+.stoic-sidebar {
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+  gap: 10px;
+}
+
+.stoic-sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 8px;
+}
+
+.stoic-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.stoic-brand-mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--clay);
+}
+
+.stoic-brand-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.stoic-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.stoic-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.stoic-new-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  background: var(--periwinkle);
+  color: #0F0F0E;
+  font-weight: 600;
+  font-size: 13.5px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.stoic-new-task:hover {
+  filter: brightness(1.08);
+}
+
+.stoic-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.stoic-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  cursor: pointer;
+  text-align: left;
+}
+.stoic-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.stoic-new-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.stoic-new-project:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+}
+
+.stoic-tasks {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.stoic-tasks-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 6px 10px;
+}
+
+.stoic-task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+}
+.stoic-task-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.stoic-task-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stoic-task-date {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.stoic-sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px 4px;
+  border-top: 1px solid var(--border);
+}
+
+.stoic-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--clay);
+  color: #0F0F0E;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stoic-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+}
+
+.stoic-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stoic-user-plan {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.stoic-upgrade {
+  font-size: 12px;
+  color: var(--periwinkle);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------------- Main ---------------- */
+.stoic-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.stoic-topbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 0;
+}
+
+.stoic-incognito-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.stoic-incognito-pill.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.stoic-incognito-pill:hover {
+  color: var(--text-primary);
+}
+
+.stoic-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 22px;
+}
+
+.stoic-greeting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-family: Georgia, "Times New Roman", serif;
+  margin: 0;
+}
+
+.stoic-greeting-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--clay);
+  flex-shrink: 0;
+}
+
+/* ---- Live daily quote card ---- */
+.stoic-quote-card {
+  width: 100%;
+  max-width: 620px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  position: relative;
+}
+
+.stoic-quote-icon {
+  color: var(--mauve);
+  margin-bottom: 8px;
+}
+
+.stoic-quote-text {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.stoic-quote-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.stoic-quote-author {
+  color: var(--mauve);
+  font-weight: 600;
+}
+
+.stoic-quote-date {
+  color: var(--text-muted);
+}
+
+/* ---- Mode pills ---- */
+.stoic-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 620px;
+}
+
+.stoic-mode-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.stoic-mode-pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.stoic-mode-pill.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ---- Input bar ---- */
+.stoic-input-bar {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 8px 10px;
+}
+
+.stoic-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14.5px;
+  padding: 6px 4px;
+}
+.stoic-input::placeholder {
+  color: var(--text-muted);
+}
+
+.stoic-speed-wrap {
+  position: relative;
+}
+
+.stoic-speed-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.stoic-speed-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.stoic-speed-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+  z-index: 10;
+}
+
+.stoic-speed-option {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+}
+.stoic-speed-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.stoic-send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--clay);
+  border: none;
+  color: #0F0F0E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.stoic-send-btn:hover {
+  filter: brightness(1.08);
+}
+
+.stoic-disclaimer {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* ---- Incognito state tint ---- */
+.stoic-shell.is-incognito .stoic-main {
+  background: linear-gradient(180deg, rgba(95, 184, 214, 0.03), transparent 200px);
+}

@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   STOIC — Design tokens
+   Direction: "Void + single mark"
+   True black stays empty. Clay is rationed to exactly the moments where
+   Stoic itself acts or speaks (send button, assistant avatar, thinking
+   state). Everything else is black / off-white / gray. No decorative
+   accent on links, hovers, or chrome — scarcity is the point.
+   ========================================================================== */
+
+@theme {
+  /* ---- Surfaces ---- */
+  --color-bg-surface: #000000;       /* base canvas, true black */
+  --color-bg-sidebar: #000000;
+  --color-bg-elevated: #0A0A0A;      /* cards / panels, barely lifted */
+  --color-bg-accent: #161616;        /* hover surface */
+  --color-bg-accent-hover: #202020;  /* active/pressed surface */
+  --color-bg-pill: #000000;
+
+  /* ---- Text ---- */
+  --color-text-primary: #F2F2F0;     /* warm off-white — avoids halation on OLED */
+  --color-text-secondary: #9E9E9C;
+  --color-text-muted: #5C5C5A;
+
+  /* ---- Borders ---- */
+  --color-border-border: rgba(255, 255, 255, 0.06); /* true hairline */
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  /* ---- The one signature color ---- */
+  /* Reserved ONLY for: send button, assistant avatar mark, active
+     "thinking" pulse. Do not use for links, hover states, icons,
+     focus rings, or any decorative chrome. */
+  --color-accent-clay: #CC785C;
+  --color-accent-clay-hover: #D88A6E;
+  --color-accent-clay-muted: rgba(204, 120, 92, 0.16); /* for the thinking pulse glow only */
+
+  /* ---- Thinking / voice accent — icy teal (not clay) ---- */
+  --color-accent-teal: #4FD1C5;
+  --color-accent-teal-muted: rgba(79, 209, 197, 0.16);
+
+  /* ---- Scrollbar ---- */
+  --color-scrollbar-thumb: #FFFFFF;
+  --color-scrollbar-thumb-hover: #E5E5E5;
+
+  /* ---- Type ---- */
+  --font-serif: "Libre Baskerville", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+body {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+/* ========== Remove all underlines, links inherit color (no accent) ========== */
+a,
+a:visited,
+a:hover,
+a:active,
+a:focus {
+  text-decoration: none !important;
+  color: inherit;
+}
+
+/* ========== White scrollbar ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: var(--color-bg-surface);
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-surface);
+  border: none;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+/* ========== Focus states — visible, but neutral (not clay) ========== */
+:focus-visible {
+  outline: 1px solid var(--color-border-strong);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Signature element — empty / new-chat state
+   A single oversized serif glyph at low opacity. Austerity made visible:
+   the "nothing here yet" state is a deliberate void, not a placeholder.
+   Usage: <div class="stoic-void-mark">"</div>  (or an em dash, per screen)
+   ========================================================================== */
+.stoic-void-mark {
+  font-family: var(--font-serif);
+  font-size: clamp(6rem, 18vw, 14rem);
+  line-height: 1;
+  color: var(--color-text-primary);
+  opacity: 0.06;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   The one accent — send button
+   ========================================================================== */
+.stoic-send-button {
+  background-color: var(--color-accent-clay);
+  color: #000000;
+  transition: background-color 150ms ease;
+}
+.stoic-send-button:hover {
+  background-color: var(--color-accent-clay-hover);
+}
+.stoic-send-button:disabled {
+  background-color: var(--color-bg-accent);
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   The one accent — assistant avatar mark
+   ========================================================================== */
+.stoic-avatar-mark {
+  background-color: var(--color-accent-clay);
+  color: #000000;
+}
+
+/* ==========================================================================
+   The one accent — thinking / active state pulse (now teal, not clay)
+   ========================================================================== */
+@keyframes stoic-thinking-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-teal-muted); }
+  50%      { box-shadow: 0 0 0 6px var(--color-accent-teal-muted); }
+}
+.stoic-thinking {
+  background-color: var(--color-accent-teal);
+  animation: stoic-thinking-pulse 1.8s ease-in-out infinite;
+}
+
+/* Voice button active state — uses same teal pulse */
+.stoic-voice-active {
+  color: var(--color-accent-teal) !important;
+  animation: stoic-thinking-pulse 1.8s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Logo click — spin once on click (new chat trigger)
+   ========================================================================== */
+@keyframes spin-once {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-once {
+  animation: spin-once 0.6s ease-in-out;
+}
+
+/* ==========================================================================
+   Logo — slow continuous spin while assistant is "thinking"
+   ========================================================================== */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 1.4s linear infinite;
+}
+
+/* ==========================================================================
+   Chat scroll region — explicit opt-in scrollbar for the message feed.
+   Uses the same white thumb as the global scrollbar above (clay stays
+   reserved for send button / avatar / thinking pulse only, per the rule
+   at the top of this file). This class exists so the chat container can
+   be targeted independently (e.g. thin Firefox scrollbar) without changing
+   global scrollbar behavior elsewhere in the app.
+   ========================================================================== */
+.chat-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-bg-surface);
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: var(--color-bg-surface);
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--color-scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-thumb-hover);
+}
+/* ==========================================================================
+   Ask box — Claude-style composer, "Ask anything"
+   ========================================================================== */
+.ask-box {
+  display: flex;
+  align-items: flex-end;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-border);
+  border-radius: 20px;
+  padding: 12px 12px 12px 20px;
+  transition: border-color 150ms ease;
+}
+
+.ask-box-focused {
+  border-color: var(--color-border-strong);
+}
+
+.ask-box-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  max-height: 200px;
+}
+
+.ask-box-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.ask-box-send {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Disclaimer footer
+   ========================================================================== */
+.disclaimer-text {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding: 8px 16px 16px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+@keyframes mic-jiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-8deg); }
+  50%      { transform: rotate(0deg); }
+  75%      { transform: rotate(8deg); }
+}
+
+.mic-jiggle-hover:hover svg {
+  animation: mic-jiggle 0.4s ease-in-out;
+}
+@keyframes voice-ring-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(204, 120, 92, 0.35); }
+  70%  { box-shadow: 0 0 0 24px rgba(204, 120, 92, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(204, 120, 92, 0); }
+}
+
+.voice-ring {
+  animation: voice-ring-pulse 1.6s ease-out infinite;
+}
+
+.voice-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #000000;   /* solid black, no bleed-through */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  z-index: 9999;          /* always on top */
+}
