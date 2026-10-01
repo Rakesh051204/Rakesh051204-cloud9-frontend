@@ -255,7 +255,10 @@ export default function Home({ activeTab, setActiveTab, openSession, onSessionCh
             case 'sources':
               patchAssistant(msg => ({ ...msg, sources: payload.sources || [] }));
               break;
-            case 'images':
+            case 'videos':
+        patchAssistant(msg => ({ ...msg, videos: payload.videos || [] }));
+        break;
+      case 'images':
               patchAssistant(msg => ({ ...msg, images: payload.images || [] }));
               break;
             case 'jobs':

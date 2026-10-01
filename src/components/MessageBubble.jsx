@@ -89,6 +89,7 @@ export default function MessageBubble({
             jobs={message.jobs ?? []}
             followUps={message.followUps ?? []}
             images={normalizedImages}
+            videos={message.videos ?? []}
             timestamp={message.timestamp}
             steps={message.steps ?? []}
             streaming={isStreaming}

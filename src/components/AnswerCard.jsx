@@ -1,3 +1,4 @@
+import VideoCards from './VideoCards';
 import { useState, useEffect, createElement } from 'react';
 import ImageLightbox from './ImageLightbox';
 import ImageGrid from './ImageGrid';
@@ -421,6 +422,7 @@ export default function AnswerCard({
   sources = [],
   jobs = [],
   images = [],
+  videos = [],
   followUps = [],
   streaming = false,
   steps = [],
@@ -455,6 +457,7 @@ export default function AnswerCard({
     <div className="max-w-3xl">
       <ThinkingPanel steps={steps} streaming={streaming} />
 
+      <VideoCards videos={videos} />
       {hasImages && <ImageGrid images={images} onImageClick={openImageFullscreen} />}
 
       {jobs.length > 0 && <JobLinksCard jobs={jobs} />}
