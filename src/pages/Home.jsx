@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import Layout from '../components/Layout';
+import { conversationsApi } from '../api/conversations';
 import MessageBubble from '../components/MessageBubble';
 import SearchBox from '../components/SearchBox';
 import ThinkingPanel from '../components/ThinkingPanel';
@@ -11,6 +11,8 @@ import { ConversationNavigator, useActiveMessageTracking } from '../components/C
 import { ChevronDown, Image, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import getDailyQuote from '../utils/getDailyQuote';
+import buildComputerScenes from '../components/buildComputerScenes.jsx';
+import StoicComputerPanel from '../components/StoicComputerPanel';
 
 const API_BASE = 'http://localhost:3001';
 
@@ -47,11 +49,10 @@ function QuickActionPills({ onSelect }) {
   );
 }
 
-export default function Home() {
+export default function Home({ activeTab, setActiveTab, openSession, onSessionChange }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('agent');
   const [recentSearches, setRecentSearches] = useState([]);
   const [selectedModel, setSelectedModel] = useState('openai/gpt-oss-120b');
   const [incognito, setIncognito] = useState(false);
@@ -72,8 +73,27 @@ export default function Home() {
   const [panelSources, setPanelSources] = useState([]);
   const [panelImages, setPanelImages] = useState([]);
   const [focusedItem, setFocusedItem] = useState(null);
+  const [panelMode, setPanelMode] = useState('manual');
 
-  // ─── Conversation navigator: right-rail tick minimap + jump-to-message ──
+  const [computerOpen, setComputerOpen] = useState(false);
+
+  const lastMsg = messages[messages.length - 1];
+  const isLastStreaming = lastMsg?.role === 'assistant' && lastMsg.streaming;
+  const computerScenes = lastMsg?.role === 'assistant'
+    ? buildComputerScenes(lastMsg.steps || [], lastMsg.sources || [], lastMsg.content || '', lastMsg.images || [])
+    : [];
+  const liveStep = computerScenes.length > 0
+    ? computerScenes[computerScenes.length - 1]?.label
+    : null;
+  useEffect(() => {
+    setComputerOpen(false);
+  }, [lastMsg?.id]);
+  const isLivePanel = panelMode === 'live' && lastMsg?.role === 'assistant';
+  const panelStepsToShow = isLivePanel ? (lastMsg.steps || []) : [];
+  const panelStreamingToShow = isLivePanel ? !!lastMsg.streaming : false;
+  const panelSourcesToShow = isLivePanel ? (lastMsg.sources || []) : panelSources;
+  const panelImagesToShow = isLivePanel ? (lastMsg.images || []) : panelImages;
+
   const messageRefs = useRef({});
   const [activeMsgId, setActiveMsgId] = useState(null);
   useActiveMessageTracking(scrollContainerRef, messageRefs, setActiveMsgId);
@@ -83,15 +103,19 @@ export default function Home() {
   };
 
   const openSourcesPanel = (sources, images) => {
+    setPanelMode('manual');
     setPanelSources(sources || []); setPanelImages(images || []); setPanelTab('sources'); setFocusedItem(null); setPanelOpen(true);
   };
   const openImagesPanel = (sources, images) => {
+    setPanelMode('manual');
     setPanelSources(sources || []); setPanelImages(images || []); setPanelTab('images'); setFocusedItem(null); setPanelOpen(true);
   };
   const openSourceDetail = (source, sources, images) => {
+    setPanelMode('manual');
     setPanelSources(sources || []); setPanelImages(images || []); setFocusedItem({ type: 'source', data: source }); setPanelOpen(true);
   };
   const openEntityDetail = (name, sources, images) => {
+    setPanelMode('manual');
     setPanelSources(sources || []); setPanelImages(images || []); setFocusedItem({ type: 'entity', data: { name } }); setPanelOpen(true);
   };
   const closePanel = () => setPanelOpen(false);
@@ -174,7 +198,6 @@ export default function Home() {
     return `${time}, ${userName}. What can I help you with?`;
   };
 
-  // ─── Shared streaming logic (used by sendMessage + regenerateMessage) ──
   const runStream = async (text, sessionIdToUse, assistantId, options = {}) => {
     const { model, webSearchOn, mode, attachments } = options;
     const effectiveModel = model || selectedModel;
@@ -260,14 +283,13 @@ export default function Home() {
       if (error.name === 'AbortError') {
         patchAssistant(msg => ({ ...msg, streaming: false }));
       } else {
-        patchAssistant(msg => ({ ...msg, content: `⚠️ Error: ${error.message}`, streaming: false }));
+        patchAssistant(msg => ({ ...msg, content: `Error: ${error.message}`, streaming: false }));
       }
     } finally {
       abortControllerRef.current = null;
     }
   };
 
-  // ─── sendMessage: adds a NEW user turn + assistant response ────────────
   const sendMessage = async (text, options = {}) => {
     const { webSearchOn, model, mode, attachments, attachmentsMeta = [] } = options;
 
@@ -304,10 +326,6 @@ export default function Home() {
     setLoading(false);
   };
 
-  // ─── regenerateMessage: re-runs the assistant response for a turn ──────
-  // Accepts either a user message id (Retry on a user bubble) or an
-  // assistant message id (Regenerate on an answer card) and resolves to
-  // the correct preceding user turn.
   const regenerateMessage = async (messageId) => {
     const idx = messages.findIndex(m => m.id === messageId);
     if (idx === -1) return;
@@ -323,7 +341,6 @@ export default function Home() {
     const sessionIdToUse = currentSessionId || makeSessionId();
     if (!currentSessionId) setCurrentSessionId(sessionIdToUse);
 
-    // Keep everything up to and including the user message, drop the old answer
     setMessages(prev => prev.slice(0, userIdx + 1));
 
     const assistantId = Date.now() + 1;
@@ -346,7 +363,6 @@ export default function Home() {
     setLoading(false);
   };
 
-  // ─── handleEditMessage: replaces a user turn and everything after it ───
   const handleEditMessage = (userMessageId, newText) => {
     const idx = messages.findIndex(m => m.id === userMessageId);
     if (idx === -1) return;
@@ -355,13 +371,9 @@ export default function Home() {
   };
 
   const handleMessageFeedback = (messageId, type) => {
-    // type is 'up' | 'down' | null
     console.log('Feedback:', messageId, type);
-    // Hook this up to POST /api/feedback if/when you want to persist it
   };
 
-  // Routes MessageBubble's onSendQuery: normal sends go to sendMessage,
-  // edits go to handleEditMessage instead.
   const handleSendQuery = (text, options = {}) => {
     if (options.edit && options.messageId) {
       handleEditMessage(options.messageId, text);
@@ -374,10 +386,17 @@ export default function Home() {
   const handleToggleIncognito = () => setIncognito(v => !v);
   const handleOpenVoice = () => setVoiceOpen(true);
   const newChat = () => { setMessages([]); setCurrentSessionId(makeSessionId()); setPanelOpen(false); };
-  const handleSessionClick = (id) => {
-    const session = sessions.find(s => s.id === id);
-    if (session) { setCurrentSessionId(id); setMessages(session.messages || []); }
+  const handleSessionClick = async (id) => {
+    setCurrentSessionId(id);
+    setMessages([]);
+    try {
+      const { messages: saved } = await conversationsApi.messages(id);
+      setMessages(saved || []);
+    } catch (err) { console.error('load chat failed', err); }
   };
+
+  useEffect(() => { if (openSession && openSession.id) handleSessionClick(openSession.id); }, [openSession]);
+  useEffect(() => { if (onSessionChange) onSessionChange(currentSessionId); }, [currentSessionId]);
   const handleTaskClick = (taskText) => sendMessage(taskText);
   const handleOpenDiscover = (tabId) => navigate(`/discover?tab=${tabId || 'top'}`);
 
@@ -392,9 +411,9 @@ export default function Home() {
     } catch(e) { console.error(e); }
   };
   const handleUpgrade = () => alert('Upgrade coming soon!');
-  const handlePin = () => alert('Pin chat — coming soon!');
-  const handleMoveToProject = () => alert('Move to project — coming soon!');
-  const handleDeleteChat = () => alert('Delete chat — coming soon!');
+  const handlePin = () => alert('Pin chat -- coming soon!');
+  const handleMoveToProject = () => alert('Move to project -- coming soon!');
+  const handleDeleteChat = () => alert('Delete chat -- coming soon!');
 
   const handleFileUploaded = (data) => {
     console.log('File uploaded:', data);
@@ -411,85 +430,26 @@ export default function Home() {
   if (messages.length === 0) {
     return (
       <>
-        <Layout activeTab={activeTab} setActiveTab={setActiveTab} recentSearches={recentSearches} onNewChat={newChat} onTaskClick={handleTaskClick} incognito={incognito} sessions={sessions} currentSessionId={currentSessionId} onSessionClick={handleSessionClick}>
-          <div className="h-full flex flex-col bg-black overflow-hidden relative">
-            <ChatTopBar incognito={incognito} onToggleIncognito={handleToggleIncognito} onOpenDiscover={handleOpenDiscover} onShare={handleShare} onUpgrade={handleUpgrade} onPin={handlePin} onMoveToProject={handleMoveToProject} onDelete={handleDeleteChat} />
-            <div className="flex-1 overflow-y-auto px-4">
-              <div className="min-h-full flex flex-col items-center justify-center py-8">
-                <div className="max-w-3xl w-full text-center">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                    {getDailyQuote()}
-                  </h1>
-                  <p className="text-sm mb-6" style={{ color: 'rgba(242,242,240,0.5)' }}>
-                    {getGreeting()}
-                  </p>
-                  <SearchBox
-                    onSend={sendMessage} loading={loading} onStop={handleStop} onOpenVoice={handleOpenVoice}
-                    model={selectedModel} onModelChange={setSelectedModel} incognito={incognito} sessionId={currentSessionId}
-                    onFileUploaded={handleFileUploaded} deepResearchEnabled={deepResearchEnabled}
-                    onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)} codeAnalysisEnabled={codeAnalysisEnabled}
-                    onToggleCodeAnalysis={() => setCodeAnalysisEnabled(v => !v)} onAddLocation={handleAddLocation}
-                    onConnectApps={handleConnectApps}
-                  />
-                  <div className="mt-4"><QuickActionPills onSelect={sendMessage} /></div>
-                  <Disclaimer />
-                </div>
-              </div>
-            </div>
-          </div>
-        </Layout>
-        {voiceOpen && <VoiceOverlay onClose={() => setVoiceOpen(false)} onSend={sendMessage} />}
-      </>
-    );
-  }
-
-  return (
-    <>
-      <Layout activeTab={activeTab} setActiveTab={setActiveTab} recentSearches={recentSearches} onNewChat={newChat} onTaskClick={handleTaskClick} incognito={incognito} sessions={sessions} currentSessionId={currentSessionId} onSessionClick={handleSessionClick}>
-        <div className="h-full w-full flex overflow-hidden relative">
-          <div className="flex-1 min-w-0 h-full flex flex-col bg-black overflow-hidden relative">
-            <ChatTopBar incognito={incognito} onToggleIncognito={handleToggleIncognito} onOpenDiscover={handleOpenDiscover} onShare={handleShare} onUpgrade={handleUpgrade} onPin={handlePin} onMoveToProject={handleMoveToProject} onDelete={handleDeleteChat} />
-            <div className="flex-1 relative overflow-hidden">
-              <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 py-6 scroll-smooth">
-                <div className="max-w-3xl mx-auto w-full space-y-4">
-                  {messages.map((msg, idx) => (
-                    <div
-                      key={msg.id || idx}
-                      data-role={msg.role}
-                      ref={(el) => { messageRefs.current[msg.id || idx] = el; }}
-                    >
-                      {msg.role === 'assistant' && (msg.streaming || (msg.steps && msg.steps.length > 0)) && (
-                        <ThinkingPanel steps={msg.steps} streaming={msg.streaming} />
-                      )}
-                      <MessageBubble
-                        message={msg} isUser={msg.role === 'user'} isStreaming={msg.streaming}
-                        onSendQuery={handleSendQuery}
-                        onRegenerate={regenerateMessage}
-                        onFeedback={(type) => handleMessageFeedback(msg.id, type)}
-                        onOpenSources={openSourcesPanel} onOpenImages={openImagesPanel}
-                        onOpenSourceDetail={openSourceDetail} onOpenEntity={openEntityDetail}
-                      />
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </div>
-
-              {showScrollButton && (
-                <button onClick={scrollToBottom} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-gray-300 hover:text-white hover:bg-[#242424] transition-colors shadow-lg" aria-label="Scroll to bottom">
-                  <ChevronDown size={18} />
-                </button>
-              )}
-
-              <ConversationNavigator
-                messages={messages}
-                activeId={activeMsgId}
-                onJump={handleJumpToMessage}
-                hidden={panelOpen}
-              />
-            </div>
-            <div className="flex-shrink-0 bg-black p-4">
-              <div className="max-w-3xl mx-auto">
+        <div className="h-full flex flex-col bg-black overflow-hidden relative">
+          <ChatTopBar
+            title={messages.find(m => m.role === 'user')?.content?.slice(0, 60) || ''}
+            incognito={incognito}
+            onToggleIncognito={handleToggleIncognito}
+            onShare={handleShare}
+            onUpgrade={handleUpgrade}
+            onPin={handlePin}
+            onMoveToProject={handleMoveToProject}
+            onDelete={handleDeleteChat}
+          />
+          <div className="flex-1 overflow-y-auto px-4">
+            <div className="min-h-full flex flex-col items-center justify-center py-8">
+              <div className="max-w-3xl w-full text-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                  {getDailyQuote()}
+                </h1>
+                <p className="text-sm mb-6" style={{ color: 'rgba(242,242,240,0.5)' }}>
+                  {getGreeting()}
+                </p>
                 <SearchBox
                   onSend={sendMessage} loading={loading} onStop={handleStop} onOpenVoice={handleOpenVoice}
                   model={selectedModel} onModelChange={setSelectedModel} incognito={incognito} sessionId={currentSessionId}
@@ -497,18 +457,108 @@ export default function Home() {
                   onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)} codeAnalysisEnabled={codeAnalysisEnabled}
                   onToggleCodeAnalysis={() => setCodeAnalysisEnabled(v => !v)} onAddLocation={handleAddLocation}
                   onConnectApps={handleConnectApps}
+                  liveStep={liveStep}
+                  computerOpen={computerOpen}
+                  onToggleComputer={() => setComputerOpen((v) => !v)}
+                  computerScenes={computerScenes}
                 />
+                <div className="mt-4"><QuickActionPills onSelect={sendMessage} /></div>
+                <Disclaimer />
               </div>
             </div>
           </div>
-
-          <SourcesPanel
-            open={panelOpen} onClose={closePanel} sources={panelSources} images={panelImages} focusedItem={focusedItem}
-            onBack={handlePanelBack} onSelectSource={(s) => setFocusedItem({ type: 'source', data: s })}
-            tab={panelTab} onTabChange={handlePanelTabChange} onImageClick={() => {}} onAskMore={handleAskMore}
-          />
         </div>
-      </Layout>
+        {voiceOpen && <VoiceOverlay onClose={() => setVoiceOpen(false)} onSend={sendMessage} />}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="h-full w-full flex overflow-hidden relative">
+        <div className="flex-1 min-w-0 h-full flex flex-col bg-black overflow-hidden relative">
+          <ChatTopBar
+            title={messages.find(m => m.role === 'user')?.content?.slice(0, 60) || ''}
+            incognito={incognito}
+            onToggleIncognito={handleToggleIncognito}
+            onShare={handleShare}
+            onUpgrade={handleUpgrade}
+            onPin={handlePin}
+            onMoveToProject={handleMoveToProject}
+            onDelete={handleDeleteChat}
+          />
+          <div className="flex-1 relative overflow-hidden">
+            <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 py-6 scroll-smooth">
+              <div className="max-w-3xl mx-auto w-full space-y-4">
+                {messages.map((msg, idx) => (
+                  <div
+                    key={msg.id || idx}
+                    data-role={msg.role}
+                    ref={(el) => { messageRefs.current[msg.id || idx] = el; }}
+                  >
+                    {msg.role === 'assistant' && (msg.streaming || (msg.steps && msg.steps.length > 0)) && (
+                      <ThinkingPanel steps={msg.steps} streaming={msg.streaming} sources={msg.sources} />
+                    )}
+                    <MessageBubble
+                      message={msg} isUser={msg.role === 'user'} isStreaming={msg.streaming}
+                      onSendQuery={handleSendQuery}
+                      onRegenerate={regenerateMessage}
+                      onFeedback={(type) => handleMessageFeedback(msg.id, type)}
+                      onOpenSources={openSourcesPanel} onOpenImages={openImagesPanel}
+                      onOpenSourceDetail={openSourceDetail} onOpenEntity={openEntityDetail}
+                    />
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {showScrollButton && (
+              <button onClick={scrollToBottom} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-gray-300 hover:text-white hover:bg-[#242424] transition-colors shadow-lg" aria-label="Scroll to bottom">
+                <ChevronDown size={18} />
+              </button>
+            )}
+
+            <ConversationNavigator
+              messages={messages}
+              activeId={activeMsgId}
+              onJump={handleJumpToMessage}
+              hidden={panelOpen}
+            />
+          </div>
+          <div className="flex-shrink-0 bg-black p-4">
+            <div className="max-w-3xl mx-auto">
+              <SearchBox
+                onSend={sendMessage} loading={loading} onStop={handleStop} onOpenVoice={handleOpenVoice}
+                model={selectedModel} onModelChange={setSelectedModel} incognito={incognito} sessionId={currentSessionId}
+                onFileUploaded={handleFileUploaded} deepResearchEnabled={deepResearchEnabled}
+                onToggleDeepResearch={() => setDeepResearchEnabled(v => !v)} codeAnalysisEnabled={codeAnalysisEnabled}
+                onToggleCodeAnalysis={() => setCodeAnalysisEnabled(v => !v)} onAddLocation={handleAddLocation}
+                onConnectApps={handleConnectApps}
+                liveStep={liveStep}
+                computerOpen={computerOpen}
+                onToggleComputer={() => setComputerOpen((v) => !v)}
+                computerScenes={computerScenes}
+              />
+            </div>
+          </div>
+        </div>
+
+        <StoicComputerPanel
+          open={computerOpen}
+          onClose={() => setComputerOpen(false)}
+          scenes={computerScenes}
+        />
+
+        <SourcesPanel
+          open={panelOpen} onClose={closePanel}
+          sources={panelSourcesToShow} images={panelImagesToShow}
+          steps={panelStepsToShow} streaming={panelStreamingToShow}
+          focusedItem={focusedItem}
+          onBack={handlePanelBack} onSelectSource={(s) => setFocusedItem({ type: 'source', data: s })}
+          tab={panelTab} onTabChange={handlePanelTabChange} onImageClick={() => {}} onAskMore={handleAskMore}
+        />
+      </div>
       {voiceOpen && <VoiceOverlay onClose={() => setVoiceOpen(false)} onSend={sendMessage} />}
     </>
   );

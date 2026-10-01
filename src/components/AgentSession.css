@@ -1,0 +1,75 @@
+/* AgentSession.css — chrome for TakeoverOverlay.jsx
+   Reuses the --scp-* tokens declared in StoicComputerPanel.css :root.
+   Fine to rely on that order: the panel always mounts (and its CSS
+   loads) before a takeover can ever be opened. */
+
+.to-overlay{
+  position:fixed; inset:0;
+  background:var(--scp-void);
+  z-index:220;
+  display:flex; flex-direction:column;
+  animation:scp-fade-in .18s ease;
+}
+
+.to-chrome{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 16px;
+  background:var(--scp-void-soft);
+  border-bottom:1px solid var(--scp-border-soft);
+  flex-shrink:0;
+}
+
+.to-tab{
+  display:flex; align-items:center; gap:6px;
+  font-size:12px; font-weight:600; color:var(--scp-text-dim);
+  padding:5px 10px; border-radius:7px 7px 0 0;
+  background:var(--scp-card);
+  flex-shrink:0;
+  white-space:nowrap;
+}
+.to-tab-dot{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--scp-ink);
+  display:inline-block;
+}
+
+.to-url-bar{
+  flex:1; min-width:0;
+  display:flex; align-items:center; gap:8px;
+  background:var(--scp-void);
+  border:1px solid var(--scp-border);
+  border-radius:20px;
+  padding:6px 12px;
+  font-size:12px;
+  color:var(--scp-text-dim);
+  font-family:'JetBrains Mono',monospace;
+}
+.to-lock{ font-size:11px; flex-shrink:0; opacity:.7; }
+.to-url{
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+}
+
+.to-body{
+  flex:1;
+  overflow:auto;
+  padding:28px;
+  display:flex;
+}
+
+.to-exit-pill{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:7px;
+  background:var(--scp-text); color:var(--scp-void);
+  font-size:12.5px; font-weight:700;
+  border:none; border-radius:20px; padding:9px 18px;
+  cursor:pointer; z-index:221;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+}
+.to-exit-pill:hover{ background:#e0e0dd; }
+
+.to-live-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--scp-void);
+  display:inline-block;
+  animation:scp-pulse 1.4s ease-in-out infinite;
+}

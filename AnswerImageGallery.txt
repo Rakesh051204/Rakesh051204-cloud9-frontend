@@ -1,0 +1,90 @@
+import { useState } from 'react';
+
+// ChatGPT-style inline image gallery: one large hero tile on the left,
+// up to 3 smaller tiles stacked on the right. If there are more than 4
+// images, the last visible tile gets a "+N" overlay (click opens the
+// full Images tab in SourcesPanel via onSeeAll).
+//
+// Usage inside AnswerCard, above or below the answer text:
+//   <AnswerImageGallery images={images} onImageClick={onOpenImages} />
+
+export default function AnswerImageGallery({ images = [], onImageClick, onSeeAll }) {
+  const [loaded, setLoaded] = useState({});
+
+  if (!images.length) return null;
+
+  const visible = images.slice(0, 4);
+  const remaining = images.length - visible.length;
+  const hero = visible[0];
+  const rest = visible.slice(1);
+
+  const markLoaded = (i) => setLoaded((prev) => ({ ...prev, [i]: true }));
+
+  return (
+    <div
+      className="grid gap-1.5 mb-4 rounded-2xl overflow-hidden"
+      style={{
+        gridTemplateColumns: rest.length ? '1.4fr 1fr' : '1fr',
+        height: 260,
+      }}
+    >
+      {/* Hero tile */}
+      <button
+        onClick={() => onImageClick?.(hero, 0)}
+        className="relative w-full h-full overflow-hidden group"
+      >
+        {!loaded[0] && (
+          <div className="absolute inset-0 bg-white/[0.05] animate-pulse" />
+        )}
+        <img
+          src={hero.src}
+          alt={hero.alt || ''}
+          onLoad={() => markLoaded(0)}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          style={{ opacity: loaded[0] ? 1 : 0, transition: 'opacity 300ms ease' }}
+        />
+        {hero.sourceTitle && (
+          <span className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-black/55 backdrop-blur-sm text-[11px] text-white/90 max-w-[85%] truncate">
+            {hero.sourceTitle}
+          </span>
+        )}
+      </button>
+
+      {/* Side stack */}
+      {rest.length > 0 && (
+        <div
+          className="grid gap-1.5 h-full"
+          style={{ gridTemplateRows: `repeat(${rest.length}, 1fr)` }}
+        >
+          {rest.map((img, i) => {
+            const idx = i + 1;
+            const isLastTile = idx === visible.length - 1 && remaining > 0;
+            return (
+              <button
+                key={img.src || idx}
+                onClick={() => (isLastTile ? onSeeAll?.() : onImageClick?.(img, idx))}
+                className="relative w-full h-full overflow-hidden group"
+              >
+                {!loaded[idx] && (
+                  <div className="absolute inset-0 bg-white/[0.05] animate-pulse" />
+                )}
+                <img
+                  src={img.src}
+                  alt={img.alt || ''}
+                  onLoad={() => markLoaded(idx)}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  style={{ opacity: loaded[idx] ? 1 : 0, transition: 'opacity 300ms ease' }}
+                />
+                {isLastTile && (
+                  <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                    <span className="text-white text-[15px] font-semibold">+{remaining}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

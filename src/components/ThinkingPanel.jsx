@@ -1,211 +1,232 @@
-import { useState, useEffect, useRef, memo } from 'react';
-import { ChevronDown, ChevronUp, Globe } from 'lucide-react';
-
-// NOTE: pair this with the updated SourcesPanel.jsx, which now has a
-// "Steps" tab. Pass the SAME `steps` (with `.sources` per step) and
-// `streaming` props to both components so the inline pills here and
-// the side-panel Steps tab stay in sync — same shape as the Meta AI
-// reference: inline "Searching for X" + pills while streaming, side
-// panel Steps/Sources tabs mirroring the same data.
+import { useState, useRef, useEffect, memo } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 // ============================================================
-// Ring loader — a single thin ring with one glowing dot orbiting
-// around it, matching the "nebula ring" reference animation.
-// Driven by requestAnimationFrame + a DOM ref instead of a CSS
-// keyframe animation, and wrapped in React.memo. This matters
-// because ThinkingPanel re-renders every second (elapsed-seconds
-// timer) — a CSS animation on a child that gets remounted each
-// render restarts from 0deg every time and never visibly spins.
-// rAF + memo keeps this component mounted once and rotates it
-// independently of the parent's render cycle.
+// Ring loader — UNCHANGED from your original.
 // ============================================================
-const OrbitLoader = memo(function OrbitLoader({ size = 28 }) {
-  const groupRef = useRef(null);
-  const rafRef = useRef(null);
-  const angleRef = useRef(0);
-  const lastTsRef = useRef(null);
+const OrbitLoader = memo(function OrbitLoader({ size = 22 }) {
+  const groupRef = useRef(null)
+  const rafRef = useRef(null)
+  const angleRef = useRef(0)
+  const lastTsRef = useRef(null)
 
   useEffect(() => {
-    const DEGREES_PER_SEC = 360 / 2.2; // full loop every 2.2s
+    const DEGREES_PER_SEC = 360 / 2.2
 
     function tick(ts) {
-      if (lastTsRef.current === null) lastTsRef.current = ts;
-      const dt = (ts - lastTsRef.current) / 1000;
-      lastTsRef.current = ts;
-      angleRef.current = (angleRef.current + DEGREES_PER_SEC * dt) % 360;
+      if (lastTsRef.current === null) lastTsRef.current = ts
+      const dt = (ts - lastTsRef.current) / 1000
+      lastTsRef.current = ts
+      angleRef.current = (angleRef.current + DEGREES_PER_SEC * dt) % 360
       if (groupRef.current) {
-        groupRef.current.setAttribute(
-          'transform',
-          `rotate(${angleRef.current} 50 50)`
-        );
+        groupRef.current.setAttribute('transform', `rotate(${angleRef.current} 50 50)`)
       }
-      rafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(tick)
     }
 
-    rafRef.current = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tick)
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-    };
-  }, []);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      lastTsRef.current = null
+    }
+  }, [])
 
   return (
-    <div className="orbit-loader" style={{ width: size, height: size, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, flexShrink: 0 }}>
       <svg viewBox="0 0 100 100" width={size} height={size} style={{ overflow: 'visible' }}>
         <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="7" />
         <g ref={groupRef}>
           <circle
-            cx="50"
-            cy="12"
-            r="9"
-            fill="#ffffff"
+            cx="50" cy="12" r="9" fill="#ffffff"
             style={{ filter: 'drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px #fff)' }}
           />
         </g>
       </svg>
     </div>
-  );
-});
+  )
+})
 
-// Which icon to show for the current step — search gets a globe,
-// everything else just uses the orbit loader alone.
-function stepIcon(text = '') {
-  if (/search/i.test(text)) return <Globe size={13} className="text-gray-500" />;
-  return null;
-}
+// ============================================================
+// MorphingStatusLine — UNCHANGED.
+// ============================================================
+function MorphingStatusLine({ text }) {
+  const [displayText, setDisplayText] = useState(text)
+  const [fading, setFading] = useState(false)
+  const prevTextRef = useRef(text)
 
-function getDomain(source) {
-  try {
-    return new URL(source.url).hostname.replace('www.', '');
-  } catch (_) {
-    return source.domain || '';
-  }
-}
+  useEffect(() => {
+    if (text === prevTextRef.current) return
+    prevTextRef.current = text
+    setFading(true)
+    const t = setTimeout(() => {
+      setDisplayText(text)
+      setFading(false)
+    }, 220)
+    return () => clearTimeout(t)
+  }, [text])
 
-// Compact inline pill — same visual language as SourcesPanel's
-// SourcePill, but small enough to sit inline under a step line.
-function InlineSourcePill({ source }) {
-  const domain = getDomain(source);
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[10.5px] text-gray-400 max-w-[140px]">
-      {source.favicon && (
-        <img src={source.favicon} alt="" className="w-3 h-3 rounded-sm flex-shrink-0" />
-      )}
-      <span className="truncate">{domain}</span>
+    <span
+      style={{
+        fontSize: 13.5,
+        color: '#EDEDEC',
+        fontStyle: 'italic',
+        lineHeight: 1.5,
+        display: 'inline-block',
+        opacity: fading ? 0 : 1,
+        transform: fading ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'opacity 220ms ease, transform 220ms ease',
+      }}
+    >
+      {displayText}
     </span>
-  );
+  )
 }
 
-function StepSourcePills({ sources = [], max = 4, onSeeAll }) {
-  if (!sources.length) return null;
-  const shown = sources.slice(0, max);
-  const extra = sources.length - shown.length;
+// ============================================================
+// FaviconPill — one small rounded chip: favicon + domain name.
+// Fades/pops in when it first appears (GPT-style "reading X" chip).
+// ============================================================
+function FaviconPill({ source }) {
+  const [imgFailed, setImgFailed] = useState(false)
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5 mt-1.5 pl-[34px]">
-      {shown.map((s, i) => (
-        <InlineSourcePill key={s.url || i} source={s} />
-      ))}
-      {extra > 0 && (
-        <button
-          onClick={onSeeAll}
-          className="text-[10.5px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] transition-colors"
-        >
-          +{extra} more
-        </button>
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '3px 9px 3px 5px',
+        borderRadius: 999,
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        fontSize: 12,
+        color: '#B8B8B4',
+        whiteSpace: 'nowrap',
+        animation: 'thinkingPillIn 260ms ease',
+      }}
+    >
+      {source.favicon && !imgFailed ? (
+        <img
+          src={source.favicon}
+          alt=""
+          referrerPolicy="no-referrer"
+          onError={() => setImgFailed(true)}
+          style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0 }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+            background: '#7C83DB', opacity: 0.6,
+          }}
+        />
       )}
+      {source.domain}
     </div>
-  );
+  )
+}
+
+// Dedup + accumulate sources across every step seen so far, in order first-seen
+function accumulateSources(steps) {
+  const seen = new Map()
+  for (const step of steps) {
+    for (const src of step.sources || []) {
+      const key = src.domain || src.url
+      if (key && !seen.has(key)) seen.set(key, src)
+    }
+  }
+  return Array.from(seen.values())
 }
 
 // ============================================================
-// Groq-style thinking indicator.
-// While streaming: orbit loader + current step text (falls back
-// to "Thinking..."), elapsed seconds ticking up, with any sources
-// found for the current step shown as pills underneath.
-// Once done: collapses to "Thought for Xs" — click to expand
-// the raw reasoning steps, each with its own source pills.
+// ThinkingPanel
 // ============================================================
-export default function ThinkingPanel({ steps, streaming, onSeeAllSources }) {
-  steps = steps || [];
-  streaming = streaming || false;
-  const [expanded, setExpanded] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(null);
-  const finalElapsedRef = useRef(null);
+export default function ThinkingPanel({ steps, streaming }) {
+  steps = steps || []
+  streaming = !!streaming
+  const [expanded, setExpanded] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const startRef = useRef(null)
+  const finalElapsedRef = useRef(null)
+
   useEffect(() => {
     if (streaming) {
-      if (startRef.current === null) startRef.current = Date.now();
+      if (startRef.current === null) startRef.current = Date.now()
+      finalElapsedRef.current = null
       const interval = setInterval(() => {
-        setElapsed(Math.max(1, Math.round((Date.now() - startRef.current) / 1000)));
-      }, 1000);
-      return () => clearInterval(interval);
+        setElapsed(Math.max(1, Math.round((Date.now() - startRef.current) / 1000)))
+      }, 1000)
+      return () => clearInterval(interval)
     } else if (startRef.current !== null && finalElapsedRef.current === null) {
-      finalElapsedRef.current = Math.max(1, Math.round((Date.now() - startRef.current) / 1000));
-      setElapsed(finalElapsedRef.current);
+      finalElapsedRef.current = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
+      setElapsed(finalElapsedRef.current)
+      startRef.current = null
     }
-  }, [streaming]);
-  if (!streaming && steps.length === 0) return null;
-  const displaySeconds = finalElapsedRef.current || elapsed || 1;
+  }, [streaming])
 
-  if (streaming) {
-    const currentStep = steps.length > 0 ? steps[steps.length - 1] : null;
-    const currentStepText = currentStep ? currentStep.text : null;
-    const icon = stepIcon(currentStepText);
+  if (!streaming && steps.length === 0) return null
+
+  const displaySeconds = finalElapsedRef.current || elapsed || 1
+  const currentText = steps.length > 0 ? steps[steps.length - 1].text : null
+  const allSources = accumulateSources(steps)
+
+  // ---- collapsed "Thought for Xs" state, after streaming finishes ----
+  if (!streaming) {
     return (
-      <div className="mb-2 select-none">
-        <div className="flex items-center gap-2 text-gray-500 text-sm">
-          <OrbitLoader size={28} />
-          {icon}
-          <span className="italic">
-            {currentStepText || (elapsed > 0 ? `Thinking for ${elapsed}s` : 'Thinking...')}
-          </span>
-        </div>
-        {currentStep && (
-          <StepSourcePills sources={currentStep.sources} onSeeAll={onSeeAllSources} />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-2 select-none">
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 text-gray-500 hover:text-gray-300 text-sm italic transition-colors"
-      >
-        <span>Thought for {displaySeconds}s</span>
-        {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-      </button>
-      {expanded && steps.length > 0 && (
-        <div className="mt-1.5 pl-3 border-l border-white/10 space-y-2">
-          {steps.map((step, idx) => {
-            const icon = stepIcon(step.text);
-            return (
-              <div key={idx}>
-                <div className="text-[13px] text-gray-500 leading-relaxed flex items-center gap-1.5">
-                  {icon}
-                  <span>{step.text}</span>
-                </div>
-                {step.sources && step.sources.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1 pl-[19px]">
-                    {step.sources.slice(0, 4).map((s, i) => (
-                      <InlineSourcePill key={s.url || i} source={s} />
+      <div style={{ marginBottom: 10, userSelect: 'none' }}>
+        <button
+          onClick={() => setExpanded(v => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            color: '#8A8A86', fontSize: 13, fontStyle: 'italic', cursor: 'pointer', padding: 0,
+          }}
+        >
+          <span>Thought for {displaySeconds}s</span>
+          {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+        {expanded && (
+          <div style={{ marginTop: 8, paddingLeft: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {steps.map((s, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, color: '#8A8A86', lineHeight: 1.5 }}>{s.text}</span>
+                {s.sources && s.sources.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {s.sources.map((src, j) => (
+                      <FaviconPill key={src.domain || j} source={src} />
                     ))}
-                    {step.sources.length > 4 && (
-                      <button
-                        onClick={onSeeAllSources}
-                        className="text-[10.5px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] transition-colors"
-                      >
-                        +{step.sources.length - 4} more
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
-            );
-          })}
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ---- live state: nebula ring + morphing status line + growing favicon row ----
+  return (
+    <div style={{ marginBottom: 10, userSelect: 'none' }}>
+      <style>{`
+        @keyframes thinkingPillIn {
+          from { opacity: 0; transform: translateY(3px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+        <OrbitLoader size={20} />
+        <MorphingStatusLine
+          text={currentText || (elapsed > 0 ? `Thinking for ${elapsed}s` : 'Thinking…')}
+        />
+      </div>
+      {allSources.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingLeft: 28 }}>
+          {allSources.map((src, i) => (
+            <FaviconPill key={src.domain || i} source={src} />
+          ))}
         </div>
       )}
     </div>
-  );
+  )
 }

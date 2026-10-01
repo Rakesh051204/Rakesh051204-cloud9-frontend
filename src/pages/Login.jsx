@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -25,7 +25,7 @@ export default function Login() {
 
   // OAuth handlers
   const handleOAuth = (provider) => {
-    window.location.href = `http://localhost:3001/auth/${provider}`;
+    window.location.href = `http://localhost:3001/auth/${provider === 'google' ? 'google/signin' : provider}`;
   };
 
   return (

@@ -1,12 +1,15 @@
-import { useState, createElement } from 'react';
+import { useState, useEffect, createElement } from 'react';
 import ImageLightbox from './ImageLightbox';
-import ImageStrip from './ImageStrip';
+import ImageGrid from './ImageGrid';
 import SourceGallery from './SourceGallery';
 import InlineCitation from './InlineCitation';
 import AnswerActions from './AnswerActions';
 import GeminiCodeBlock from './GeminiCodeBlock';
+import ArtifactCard from './ArtifactCard';
 import { CornerDownRight } from 'lucide-react';
 import JobLinksCard from './JobLinksCard';
+import ThinkingPanel from './ThinkingPanel';
+import { saveArtifact } from '../utils/artifactsStore';
 
 const CITE_OR_BOLD =
   /(\*\*(.+?)\*\*)|\[\[cite:([^\]]+)\]\]|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\[([a-z0-9-]+(?:\.[a-z0-9-]+)+)\]|(https?:\/\/[^\s\]\)]+)/gi;
@@ -21,15 +24,37 @@ function isLikelyEntityName(text) {
   return words.every((w) => /^[A-Za-z][A-Za-z'.-]*$/.test(w) && /[A-Z]/.test(w));
 }
 
+function normalizeDomain(d = '') {
+  if (!d) return '';
+  let input = d.trim();
+  if (!/^https?:\/\//i.test(input)) input = `https://${input}`;
+  try {
+    return new URL(input).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return d.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim();
+  }
+}
+
 function buildSourceMap(sources) {
   const map = {};
   sources.forEach((s, i) => {
-    const key = s.id ?? s.domain;
-    if (!(key in map)) map[key] = s;
-    map[`${s.domain}::${i}`] = s;
-    if (s.domain && !(s.domain in map)) map[s.domain] = s;
+    const domain = normalizeDomain(s.domain || s.url || '');
+    const idKey = s.id ? String(s.id) : null;
+    if (idKey && !(idKey in map)) map[idKey] = s;
+    if (domain && !(domain in map)) map[domain] = s;
+    map[`${domain}::${i}`] = s;
   });
   return map;
+}
+
+function resolveSource(sourceMap, sources, rawKey) {
+  const key = normalizeDomain(rawKey);
+  if (sourceMap[key]) return sourceMap[key];
+  if (sourceMap[rawKey]) return sourceMap[rawKey];
+  return sources.find((s) => {
+    const d = normalizeDomain(s.domain || s.url || '');
+    return d && (d.includes(key) || key.includes(d));
+  });
 }
 
 function splitIntoBlocks(content) {
@@ -78,93 +103,149 @@ function splitIntoBlocks(content) {
 
 function renderInline(text, sources, onOpenSource, onOpenEntity) {
   const sourceMap = buildSourceMap(sources);
-  const nodes = [];
+  const rawNodes = [];
   let lastIndex = 0;
   let match;
-  let key = 0;
   CITE_OR_BOLD.lastIndex = 0;
 
   while ((match = CITE_OR_BOLD.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      nodes.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
+      rawNodes.push({ type: 'text', value: text.slice(lastIndex, match.index) });
     }
 
     if (match[1]) {
-      const boldText = match[2];
-      if (onOpenEntity && isLikelyEntityName(boldText)) {
-        nodes.push(
-          <button
-            key={key++}
-            type="button"
-            onClick={() => onOpenEntity(boldText)}
-            className="inline font-semibold text-white underline decoration-white/30 underline-offset-2 hover:decoration-[#7C83DB] hover:text-[#c9cbf5] transition-colors cursor-pointer bg-transparent p-0 align-baseline"
-          >
-            {boldText}
-          </button>
-        );
-      } else {
-        nodes.push(
-          <strong key={key++} className="font-semibold text-white">
-            {boldText}
-          </strong>
-        );
-      }
-    } else if (match[3]) {
-      const citeKey = match[3];
-      const src = sourceMap[citeKey];
-      const idx = sources.findIndex((s) => (s.id ?? s.domain) === citeKey) + 1;
+      rawNodes.push({ type: 'bold', value: match[2] });
+    } else if (match[3] || match[6]) {
+      const rawKey = match[3] || match[6];
+      const src = resolveSource(sourceMap, sources, rawKey);
       if (src) {
-        nodes.push(<InlineCitation key={key++} source={src} index={idx || null} onOpen={onOpenSource} />);
+        rawNodes.push({ type: 'citation', source: src });
       } else {
-        nodes.push(<span key={key++}>{match[0]}</span>);
+        const domain = normalizeDomain(rawKey);
+        rawNodes.push({
+          type: 'citation',
+          source: { domain, url: `https://${domain}`, title: domain },
+        });
       }
     } else if (match[5]) {
-      nodes.push(
-        createElement(
-          'a',
-          {
-            key: key++,
-            href: match[5],
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            className: 'text-[#F2F2F0] underline decoration-white/30 underline-offset-2 hover:decoration-white/70 transition-colors',
-          },
-          match[4]
-        )
-      );
-    } else if (match[6]) {
-      const citeKey = match[6];
-      const src = sourceMap[citeKey];
-      const idx = sources.findIndex((s) => (s.id ?? s.domain) === citeKey) + 1;
-      if (src) {
-        nodes.push(<InlineCitation key={key++} source={src} index={idx || null} onOpen={onOpenSource} />);
-      } else {
-        nodes.push(<span key={key++}>{match[0]}</span>);
-      }
+      rawNodes.push({ type: 'link', href: match[5], label: match[4] });
     } else if (match[7]) {
-      const rawUrl = match[7];
-      const displayText = rawUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      nodes.push(
-        createElement(
-          'a',
-          {
-            key: key++,
-            href: rawUrl,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            className: 'text-[#7C83DB] underline decoration-[#7C83DB]/40 underline-offset-2 hover:decoration-[#7C83DB] transition-colors break-all',
-          },
-          displayText
-        )
-      );
+      rawNodes.push({ type: 'rawlink', href: match[7] });
     }
 
     lastIndex = CITE_OR_BOLD.lastIndex;
   }
   if (lastIndex < text.length) {
-    nodes.push(<span key={key++}>{text.slice(lastIndex)}</span>);
+    rawNodes.push({ type: 'text', value: text.slice(lastIndex) });
   }
-  return nodes;
+
+  const merged = [];
+  for (const node of rawNodes) {
+    const prev = merged[merged.length - 1];
+    const isWhitespaceOnly = node.type === 'text' && /^\s*$/.test(node.value);
+
+    if (node.type === 'citation' && prev?.type === 'citation') {
+      prev.extra.push(node.source);
+      continue;
+    }
+    if (isWhitespaceOnly && prev?.type === 'citation') {
+      continue;
+    }
+
+    if (node.type === 'citation') {
+      merged.push({ ...node, extra: [] });
+    } else {
+      merged.push(node);
+    }
+  }
+
+  return merged.map((node, key) => {
+    if (node.type === 'text') return <span key={key}>{node.value}</span>;
+
+    if (node.type === 'bold') {
+      if (onOpenEntity && isLikelyEntityName(node.value)) {
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onOpenEntity(node.value)}
+            className="inline font-semibold text-white underline decoration-white/30 underline-offset-2 hover:decoration-[#7C83DB] hover:text-[#c9cbf5] transition-colors cursor-pointer bg-transparent p-0 align-baseline"
+          >
+            {node.value}
+          </button>
+        );
+      }
+      return (
+        <strong key={key} className="font-semibold text-white">
+          {node.value}
+        </strong>
+      );
+    }
+
+    if (node.type === 'citation') {
+      return (
+        <InlineCitation
+          key={key}
+          source={node.source}
+          extraCount={node.extra.length}
+          onOpen={onOpenSource}
+        />
+      );
+    }
+
+    if (node.type === 'link') {
+      const domain = normalizeDomain(node.href);
+      const favicon = domain
+        ? createElement('img', {
+            src: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+            alt: '',
+            className: 'w-3.5 h-3.5 rounded-sm shrink-0',
+            onError: (e) => { e.currentTarget.style.display = 'none'; },
+          })
+        : null;
+      return createElement(
+        'a',
+        {
+          key,
+          href: node.href,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          className:
+            'inline-flex items-center gap-1.5 align-middle text-[#F2F2F0] hover:text-[#7C83DB] underline decoration-white/30 hover:decoration-[#7C83DB] underline-offset-2 transition-colors',
+        },
+        favicon,
+        node.label
+      );
+    }
+
+    if (node.type === 'rawlink') {
+      const displayText = node.href.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const domain = normalizeDomain(node.href);
+      const favicon = domain
+        ? createElement('img', {
+            src: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+            alt: '',
+            className: 'w-3.5 h-3.5 rounded-sm shrink-0',
+            onError: (e) => { e.currentTarget.style.display = 'none'; },
+          })
+        : null;
+      return createElement(
+        'a',
+        {
+          key,
+          href: node.href,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          className:
+            'inline-flex items-center gap-1.5 align-middle text-[#7C83DB] hover:text-[#9ea3ec] underline decoration-[#7C83DB]/40 hover:decoration-[#9ea3ec] underline-offset-2 transition-colors break-all',
+        },
+        favicon,
+        displayText
+      );
+    }
+
+    return null;
+  });
 }
 
 function renderTable(lines, sources, key, onOpenSource, onOpenEntity) {
@@ -208,21 +289,59 @@ function renderTable(lines, sources, key, onOpenSource, onOpenEntity) {
   );
 }
 
-function renderBlock(block, sources, key, onOpenSource, onOpenEntity, isStreamingLast = false) {
+function ArtifactBlock({ id, language, code, onOpen }) {
+  const title = `${(language || 'text').toUpperCase()} snippet`;
+
+  useEffect(() => {
+    saveArtifact({ id, language: language || 'text', code, title });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, code]);
+
+  return (
+    <ArtifactCard
+      language={language}
+      code={code}
+      title={title}
+      onOpen={() => onOpen?.({ id, language: language || 'text', code, title })}
+    />
+  );
+}
+
+function renderBlock(
+  block,
+  sources,
+  key,
+  onOpenSource,
+  onOpenEntity,
+  isStreamingLast = false,
+  messageId,
+  onOpenArtifact
+) {
   const trimmed = block.trim();
 
   const fenceMatch = trimmed.match(FENCE_RE);
   if (fenceMatch) {
     const lang = (fenceMatch[1] || 'text').toLowerCase();
     const code = fenceMatch[2].replace(/\n$/, '');
-    return <GeminiCodeBlock key={key} language={lang} code={code} />;
+    const artifactId = `${messageId || 'msg'}-${key}`;
+    return (
+      <GeminiCodeBlock key={key} language={lang} code={code} />
+    );
   }
 
   const openFence = trimmed.match(/^```(\S*)/);
   if (openFence && isStreamingLast) {
-    return <GeminiCodeBlock key={key} language={openFence[1] || 'text'} code={undefined} />;
+    const codeLines = trimmed.split('\n').slice(1);
+    const partialCode = codeLines.join('\n');
+    return (
+      <GeminiCodeBlock
+        key={key}
+        language={openFence[1] || 'text'}
+        code={partialCode}
+        isStreaming={true}
+      />
+    );
   }
-
   const h3 = trimmed.match(/^###\s+(.*)/);
   if (h3) {
     return (
@@ -304,6 +423,8 @@ export default function AnswerCard({
   images = [],
   followUps = [],
   streaming = false,
+  steps = [],
+  messageId,
   onFollowUpClick,
   onRegenerate,
   onShare,
@@ -312,6 +433,7 @@ export default function AnswerCard({
   onOpenImages,
   onOpenSourceDetail,
   onOpenEntity,
+  onOpenArtifact,
 }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const blocks = splitIntoBlocks(content);
@@ -322,7 +444,8 @@ export default function AnswerCard({
   const openEntity = (name) => onOpenEntity?.(name, sources, images);
 
   const openImageFullscreen = (img) => {
-    const idx = images.findIndex((i) => i.src === img.src);
+    const key = img.url || img.src;
+    const idx = images.findIndex((i) => (i.url || i.src) === key);
     setLightboxIndex(idx >= 0 ? idx : 0);
   };
 
@@ -330,7 +453,9 @@ export default function AnswerCard({
 
   return (
     <div className="max-w-3xl">
-      {hasImages && <ImageStrip images={images} />}
+      <ThinkingPanel steps={steps} streaming={streaming} />
+
+      {hasImages && <ImageGrid images={images} onImageClick={openImageFullscreen} />}
 
       {jobs.length > 0 && <JobLinksCard jobs={jobs} />}
 
@@ -350,7 +475,16 @@ export default function AnswerCard({
                 isSettled ? 'opacity-100 translate-y-0' : 'opacity-90'
               }`}
             >
-              {renderBlock(block, sources, i, openSourceDetail, openEntity, streaming && isLast)}
+              {renderBlock(
+                block,
+                sources,
+                i,
+                openSourceDetail,
+                openEntity,
+                streaming && isLast,
+                messageId,
+                onOpenArtifact
+              )}
               {streaming && isLast && !/^```/.test(block.trim()) && (
                 <span className="inline-block w-1.5 h-4 ml-0.5 bg-white/70 align-middle animate-pulse" />
               )}

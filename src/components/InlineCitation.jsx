@@ -1,7 +1,11 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function InlineCitation({ source, index, onOpen }) {
+// ChatGPT-style inline citation: a small pill showing the SOURCE NAME
+// (favicon + site name, e.g. "Business Insider"), not a numeric index.
+// If `extraCount` is passed (other sources backing the same claim),
+// it renders as "Business Insider +1" — matching the reference video.
+export default function InlineCitation({ source, extraCount = 0, onOpen }) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const ref = useRef(null);
@@ -10,9 +14,16 @@ export default function InlineCitation({ source, index, onOpen }) {
   if (!source) return null;
 
   const domain = (() => {
-    try { return new URL(source.url).hostname.replace('www.', ''); }
-    catch (_) { return source.domain || ''; }
+    try {
+      return new URL(source.url).hostname.replace('www.', '');
+    } catch (_) {
+      return source.domain || '';
+    }
   })();
+
+  // Prefer a human-readable site name over the raw domain when we have
+  // one (e.g. "Business Insider" instead of "businessinsider.com").
+  const displayName = source.siteName || source.name || domain;
 
   const handleEnter = () => {
     clearTimeout(timerRef.current);
@@ -35,14 +46,18 @@ export default function InlineCitation({ source, index, onOpen }) {
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onClick={() => onOpen?.(source)}
-      className="inline-flex items-center gap-0.5 align-middle mx-0.5 px-1.5 py-0.5
-                 rounded-md bg-white/[0.06] hover:bg-white/[0.12] cursor-pointer
-                 text-[11px] text-gray-300 hover:text-white transition-colors"
+      className="inline-flex items-center gap-1 align-middle mx-1 px-2 py-0.5
+                 rounded-full bg-white/[0.06] hover:bg-white/[0.12] cursor-pointer
+                 text-[11.5px] font-medium text-gray-300 hover:text-white transition-colors
+                 whitespace-nowrap"
     >
       {source.favicon && (
-        <img src={source.favicon} alt="" className="w-3 h-3 rounded-sm" />
+        <img src={source.favicon} alt="" className="w-3.5 h-3.5 rounded-sm shrink-0" />
       )}
-      {index ? index : null}
+      <span className="truncate max-w-[140px]">{displayName}</span>
+      {extraCount > 0 && (
+        <span className="text-gray-500">+{extraCount}</span>
+      )}
 
       {show &&
         createPortal(

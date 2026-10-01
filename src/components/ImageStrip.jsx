@@ -6,21 +6,62 @@
 // through every image the backend returned — not just the visible ones.
 // Expects `images` in the shape your backend already returns from
 // deepSearch(): [{ url, description }]
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MAX_GRID_THUMBS = 6; // hero + up to 6 = 7 visible, matches ChatGPT's layout
 
-// Some image URLs from search engines fail to load (hotlink protection,
-// dead links, CORS, etc). Without this, a failed <img> falls back to the
-// browser's default broken-image rendering, which draws the alt text
-// directly over the image area — that's what was causing the "half image
-// with overlapping text" look. This shows a clean placeholder instead
-// and skips the broken image everywhere it's used (hero, grid, lightbox,
-// filmstrip) instead of just failing silently in one spot.
-function SafeImg({ src, alt, className, onClick, title }) {
-  const [failed, setFailed] = useState(false);
+// Many search-result image URLs live on sites with hotlink protection —
+// they reject requests unless the browser looks like it's loading the
+// image on their own page. Two things fix most of these:
+//   1. Don't send a Referer header at all (referrerPolicy="no-referrer").
+//      Some hotlink checks specifically block cross-site referrers but
+//      allow requests with none.
+//   2. If it still fails, retry once through a public image proxy
+//      (images.weserv.nl) that fetches the image server-side and
+//      re-serves it from a neutral origin — this bypasses hotlink
+//      protection entirely for the cases step 1 doesn't fix.
+// Only after BOTH attempts fail do we show the "Image unavailable"
+// placeholder, so the vast majority of results should now actually load.
+function proxiedUrl(originalUrl) {
+  try {
+    const bare = originalUrl.replace(/^https?:\/\//, '');
+    return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&default=404`;
+  } catch {
+    return null;
+  }
+}
 
-  if (failed) {
+function SafeImg({ src, alt, className, onClick, title }) {
+  const [stage, setStage] = useState('direct'); // direct | proxy | failed
+  const [currentSrc, setCurrentSrc] = useState(src);
+
+  // Reset when the src prop itself changes (e.g. different image in a list)
+  useEffect(() => {
+    // No URL at all (empty string, undefined, null) — an <img> with an
+    // empty src never fires onLoad or onError, it just sits blank
+    // forever. Treat that as an immediate failure instead of hanging.
+    if (!src) {
+      setStage('failed');
+      setCurrentSrc(src);
+      return;
+    }
+    setStage('direct');
+    setCurrentSrc(src);
+  }, [src]);
+
+  const handleError = () => {
+    if (stage === 'direct') {
+      const proxied = proxiedUrl(src);
+      if (proxied) {
+        setStage('proxy');
+        setCurrentSrc(proxied);
+        return;
+      }
+    }
+    setStage('failed');
+  };
+
+  if (stage === 'failed') {
     return (
       <div
         className={`${className} image-fallback`}
@@ -39,10 +80,11 @@ function SafeImg({ src, alt, className, onClick, title }) {
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt || ''}
       loading="lazy"
-      onError={() => setFailed(true)}
+      referrerPolicy="no-referrer"
+      onError={handleError}
       className={className}
       onClick={onClick}
       title={title}
@@ -56,11 +98,19 @@ export default function ImageStrip({ images = [] }) {
   if (!images || images.length === 0) return null;
 
   // Backend (searchPipeline.js) sends { src, alt }. Normalize here so this
-  // component works no matter which shape comes through.
-  const normalized = images.map((img) => ({
-    url: img.url || img.src,
-    description: img.description || img.alt || '',
-  }));
+  // component works no matter which shape comes through. Drop any entry
+  // with no usable URL at all — those were the permanently-blank gray
+  // tiles (an <img> with an empty src never fires onError, so it just
+  // hangs forever instead of showing the fallback).
+  const normalized = images
+    .map((img) => ({
+      url: img.url || img.src,
+      description: img.description || img.alt || '',
+    }))
+    .filter((img) => !!img.url);
+
+  if (normalized.length === 0) return null;
+
 
   const [hero, ...rest] = normalized;
   const gridImages = rest.slice(0, MAX_GRID_THUMBS);
