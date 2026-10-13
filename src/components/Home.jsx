@@ -8,7 +8,7 @@ import ChatTopBar from '../components/ChatTopBar';
 import Disclaimer from '../components/Disclaimer';
 import VoiceOverlay from '../components/VoiceOverlay';
 import SourcesPanel from '../components/SourcesPanel';
-import ArtifactPanel from '../components/ArtifactPanel';
+import ArtifactPanel from '../components/Artifactpanel';
 import { ConversationNavigator, useActiveMessageTracking } from '../components/ConversationNavigator';
 import { ChevronDown, Image, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

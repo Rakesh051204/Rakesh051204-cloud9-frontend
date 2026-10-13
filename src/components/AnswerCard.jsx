@@ -10,7 +10,7 @@ import AnswerActions from './AnswerActions';
 import GeminiCodeBlock from './GeminiCodeBlock';
 import InteractiveWidget from './InteractiveWidget';
 import WebPreview from './WebPreview';
-import ArtifactCard from './ArtifactCard';
+import ArtifactCard from './Artifactcard';
 
 import { CornerDownRight } from 'lucide-react';
 import JobLinksCard from './JobLinksCard';
