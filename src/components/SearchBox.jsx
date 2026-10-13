@@ -402,6 +402,7 @@ export default function SearchBox({
     if ((!trimmed && doneAttachments.length === 0) || loading) return;
 
     const attachmentsMeta = doneAttachments.map((f) => ({
+      url: f.url || f.previewUrl || (() => { const b = Object.values(f).find((x) => typeof Blob !== "undefined" && x instanceof Blob); return b ? URL.createObjectURL(b) : undefined; })(), /*ATT-URL*/
       id: f.id,
       name: f.name,
       type: f.type,

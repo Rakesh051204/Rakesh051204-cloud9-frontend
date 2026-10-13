@@ -295,3 +295,14 @@ textarea#stoic-search-no-autofill {
 
 img { max-width: 100%; height: auto; }
 .answer-content img, .citation-pill img { width: 16px !important; height: 16px !important; object-fit: contain; }
+
+/* === no-horizontal-scrollbar fix v2 === */
+html, body, #root { max-width: 100%; overflow-x: hidden; }
+main, [class*="overflow-y-auto"], [class*="overflow-auto"], [class*="overflow-y-scroll"] { overflow-x: hidden !important; }
+*::-webkit-scrollbar:horizontal { display: none !important; height: 0 !important; }
+*::-webkit-scrollbar { width: 6px; }
+*::-webkit-scrollbar-thumb { background: #2a2a28; border-radius: 3px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-button { display: none; }
+pre, table { max-width: 100%; overflow-x: auto; }
+/* === end fix v2 === */

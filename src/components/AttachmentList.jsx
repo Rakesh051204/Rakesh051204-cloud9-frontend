@@ -1,46 +1,47 @@
-import { useState } from 'react';
-import { FileText, Play } from 'lucide-react';
-import AttachmentPreview from './AttachmentPreview';
+import React, { useState } from "react";
+import AttachmentPreview from "./AttachmentPreview";
+import FileTypeIcon, { getFileKind } from "./FileTypeIcon";
 
 export default function AttachmentList({ attachments }) {
   const [preview, setPreview] = useState(null);
   if (!attachments || attachments.length === 0) return null;
 
-  const open = (att) =>
-    setPreview({
-      name: att.name,
-      url: att.blobUrl || att.previewUrl || null,
-      type: att.mime || (att.type === 'image' ? 'image/*' : att.type === 'video' ? 'video/*' : ''),
-    });
-
   return (
     <>
-      <div className="flex flex-wrap gap-2 justify-end mb-1">
-        {attachments.map((att, i) =>
-          att.type === 'image' && att.previewUrl ? (
-            <img
-              key={att.id || i}
-              src={att.previewUrl}
-              alt={att.name || 'attachment'}
-              onClick={() => open(att)}
-              className="w-20 h-20 object-cover rounded-xl border border-[#2a2a2a] cursor-zoom-in hover:opacity-90 transition-opacity"
-            />
-          ) : (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", marginBottom: 6 }}>
+        {attachments.map((att, i) => {
+          const name = att.name || att.originalName || "file";
+          const mime = att.mimetype || att.mimeType || att.type || "";
+          const src = att.url || att.previewUrl || att.thumb || att.src || att.dataUrl || "";
+          const isImg = (mime.startsWith("image/") || att.type === "image" || /\.(png|jpe?g|gif|webp|bmp)$/i.test(name)) && src;
+          if (isImg) {
+            return (
+              <img
+                key={i} src={src} alt={name} onClick={() => setPreview(att)}
+                style={{ height: 120, maxWidth: 220, objectFit: "cover", borderRadius: 12, cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)" }}
+              />
+            );
+          }
+          const kind = getFileKind(name, mime);
+          return (
             <button
-              key={att.id || i}
-              type="button"
-              onClick={() => open(att)}
-              className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl max-w-[200px] cursor-pointer hover:border-[#3a3a3a] transition-colors"
+              key={i} onClick={() => setPreview(att)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "8px 12px 8px 8px",
+                background: "#1c1c1b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,
+                cursor: "pointer", textAlign: "left", maxWidth: 260,
+              }}
             >
-              {att.type === 'video'
-                ? <Play size={16} className="text-gray-400 shrink-0" />
-                : <FileText size={16} className="text-gray-400 shrink-0" />}
-              <span className="text-xs text-gray-300 truncate">{att.name}</span>
+              <FileTypeIcon name={name} mime={mime} size={36} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", color: "#eee", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 190 }}>{name}</span>
+                <span style={{ display: "block", color: "#8b8b86", fontSize: 11 }}>{kind.label}</span>
+              </span>
             </button>
-          )
-        )}
+          );
+        })}
       </div>
-      <AttachmentPreview file={preview} onClose={() => setPreview(null)} />
+      {preview && <AttachmentPreview file={preview} onClose={() => setPreview(null)} />}
     </>
   );
 }

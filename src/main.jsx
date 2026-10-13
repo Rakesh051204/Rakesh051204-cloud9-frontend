@@ -1,4 +1,6 @@
-﻿import React from 'react';
+import "./utils/mathRender.js";
+import "./utils/fileStash.js";
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';

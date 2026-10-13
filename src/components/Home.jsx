@@ -275,11 +275,11 @@ export default function Home() {
 
           switch (payload.event) {
             case 'thinking':
-              patchAssistant(msg => ({ ...msg, steps: [...(msg.steps || []), { text: payload.text }] }));
+              patchAssistant(msg => ({ ...msg, steps: [...(msg.steps || []), { text: payload.text, sources: payload.sources, detail: payload.detail }] }));
               break;
             case 'sources':
               console.log('STOIC_DEBUG sources:', payload.sources);
-              alert(JSON.stringify(payload.sources, null, 2));
+              
               patchAssistant(msg => ({ ...msg, sources: payload.sources || [] }));
               break;
             case 'images':
@@ -291,7 +291,10 @@ export default function Home() {
             case 'token':
               patchAssistant(msg => ({ ...msg, content: (msg.content || '') + (payload.text || '') }));
               break;
-            case 'followups':
+            case 'game':
+                patchAssistant(msg => ({ ...msg, game: payload.game || null }));
+                break;
+              case 'followups':
               patchAssistant(msg => ({ ...msg, followUps: payload.followUps || [] }));
               break;
             case 'error':
@@ -519,7 +522,7 @@ export default function Home() {
               onDelete={handleDeleteChat}
             />
             <div className="flex-1 relative overflow-hidden">
-              <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 py-6 scroll-smooth">
+              <div ref={scrollContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-4 py-6 scroll-smooth">
                 <div className="max-w-3xl mx-auto w-full space-y-4">
                   {messages.map((msg, idx) => (
                     <div

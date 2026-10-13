@@ -1,148 +1,130 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react'
 
-const MAX_IMAGES = 7;
-const LOAD_TIMEOUT_MS = 6000; // if an image hasn't loaded or errored by then, treat it as dead
+const MAX_IMAGES = 12
+const LOAD_TIMEOUT_MS = 9000
+const JUNK = /(logo|favicon|icon|sprite|placeholder|avatar-default|brand-mark|og-image|apple-touch)/i
 
-// Filenames/paths that are almost always logos, icons, or sprites rather
-// than real photos — drop these before they ever get a tile.
-const JUNK_PATTERNS = /(logo|favicon|icon|sprite|placeholder|avatar-default|brand-mark|og-image|apple-touch)/i;
+const fullUrl = (img) => img.url || img.src
+const thumbUrl = (img) => img.thumb || img.thumbnail || img.url || img.src
+const proxied = (u) => 'https://images.weserv.nl/?url=' + encodeURIComponent(String(u).replace(/^https?:\/\//, '')) + '&default=404'
 
-function getSrc(img) {
-  return img.url || img.src;
+function isJunk(img) {
+  const s = fullUrl(img) || ''
+  if (JUNK.test(s)) return true
+  if (img.width && img.height && (img.width < 200 || img.height < 200)) return true
+  return false
 }
 
-function getProxiedSrc(url) {
-  if (!url) return url;
-  const bare = url.replace(/^https?:\/\//, '');
-  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&default=404`;
-}
+function Tile({ img, delay, onFail, onClick, onLoaded }) {
+  const [stage, setStage] = useState('direct')
+  const [ok, setOk] = useState(false)
+  const base = thumbUrl(img)
+  const src = stage === 'direct' ? base : proxied(base)
 
-function looksLikeJunk(img) {
-  const src = getSrc(img) || '';
-  if (JUNK_PATTERNS.test(src)) return true;
-  // Some search APIs return width/height in metadata — use it if present.
-  if (img.width && img.height) {
-    if (img.width < 200 || img.height < 200) return true; // too small to be a real photo
+  useEffect(() => {
+    if (ok) return
+    const t = setTimeout(() => {
+      if (stage === 'direct') setStage('proxy')
+      else onFail()
+    }, LOAD_TIMEOUT_MS)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, ok])
+
+  const handleError = () => {
+    if (stage === 'direct') setStage('proxy')
+    else onFail()
   }
-  return false;
-}
+  const handleLoad = (e) => {
+    const { naturalWidth, naturalHeight } = e.target
+    if (naturalWidth < 120 || naturalHeight < 120) { onFail(); return }
+    setOk(true)
+    onLoaded && onLoaded()
+  }
 
-// images: [{ url, thumbnail, source, title, width?, height? }] — already validated server-side
-export default function ImageGrid({ images = [], onImageClick }) {
-  const [failed, setFailed] = useState({});
+  const cap = img.title || img.alt || img.description || ''
+  const from = img.source || ''
 
-  // Pre-filter obvious junk, then cap to MAX_IMAGES so we never
-  // render more than 7 regardless of what the backend sends.
-  const candidates = useMemo(
-    () => images.filter((img) => !looksLikeJunk(img)).slice(0, MAX_IMAGES),
-    [images]
-  );
-
-  const visible = candidates.filter((_, i) => !failed[i]);
-  if (visible.length === 0) return null; // nothing usable — render nothing, no blob
-
-  const markFailed = (i) => setFailed((prev) => ({ ...prev, [i]: true }));
-
-  // Single image: full width
-  if (candidates.length === 1) {
-    return (
-      <div className="rounded-2xl overflow-hidden mb-3 w-full" style={{ aspectRatio: '16 / 9' }}>
-        <ImgTile
-          img={candidates[0]}
-          onError={() => markFailed(0)}
-          onClick={() => onImageClick?.(candidates[0])}
-          className="w-full h-full object-cover"
+  return (
+    <div className="sg-item" onClick={() => onClick && onClick(img)}>
+      <div className={'sg-img' + (ok ? ' ok' : '')} style={{ '--d': delay + 'ms' }}>
+        <img
+          key={stage}
+          src={src}
+          alt={cap}
+          referrerPolicy="no-referrer"
+          loading="eager"
+          onLoad={handleLoad}
+          onError={handleError}
         />
       </div>
-    );
-  }
-
-  // 2+ images: ChatGPT layout — big left, stacked right (max 2 on the right,
-  // remaining count shown as a badge on the last tile)
-  const [main, ...rest] = candidates;
-  const side = rest.slice(0, 2);
-  const extraCount = candidates.length - 3; // images beyond the visible 3 tiles
-
-  return (
-    <div
-      className="grid gap-1 rounded-2xl overflow-hidden mb-3 w-full"
-      style={{ gridTemplateColumns: '2fr 1fr', aspectRatio: '16 / 9' }}
-    >
-      <ImgTile
-        img={main}
-        onError={() => markFailed(0)}
-        onClick={() => onImageClick?.(main)}
-        className="w-full h-full object-cover"
-      />
-      <div className="grid gap-1" style={{ gridTemplateRows: side.length === 2 ? '1fr 1fr' : '1fr' }}>
-        {side.map((img, i) => {
-          const isLast = i === side.length - 1;
-          return (
-            <ImgTile
-              key={getSrc(img) || i}
-              img={img}
-              onError={() => markFailed(i + 1)}
-              onClick={() => onImageClick?.(img)}
-              className="w-full h-full object-cover"
-              badge={isLast && extraCount > 0 ? `+${extraCount}` : null}
-            />
-          );
-        })}
-      </div>
+      {(cap || from) && <div className="sg-cap">{cap}{from ? ' Source: ' + from : ''}</div>}
     </div>
-  );
+  )
 }
 
-function ImgTile({ img, onError, onClick, className, badge }) {
-  const [loaded, setLoaded] = useState(false);
-  const src = getProxiedSrc(getSrc(img));
+export default function ImageGrid({ images = [], onImageClick }) {
+  const ref = useRef(null)
+  const [failed, setFailed] = useState({})
+  const [edge, setEdge] = useState({ l: false, r: false })
 
-  // If the image never fires onLoad or onError (hung request, slow CDN,
-  // silently blocked), bail out after LOAD_TIMEOUT_MS instead of leaving
-  // the skeleton spinning forever.
-  useEffect(() => {
-    if (loaded) return;
-    const timer = setTimeout(() => onError(), LOAD_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src]);
+  const list = useMemo(
+    () => (images || []).filter((im) => im && thumbUrl(im) && !isJunk(im)).slice(0, MAX_IMAGES),
+    [images]
+  )
+  const shown = list.map((im, i) => ({ im, i })).filter((x) => !failed[x.i])
 
-  if (!src) return null; // no usable src — skip instead of rendering broken
+  const measure = () => {
+    const el = ref.current
+    if (!el) return
+    setEdge({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+  }
+  useEffect(() => { measure() }, [shown.length])
+
+  if (shown.length === 0) return null
+
+  const go = (d) => {
+    const el = ref.current
+    if (el) el.scrollBy({ left: d * Math.max(240, el.clientWidth * 0.7), behavior: 'smooth' })
+  }
 
   return (
-    <div className="relative bg-[#1a1a19] w-full h-full cursor-pointer" onClick={onClick}>
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-[#1a1a19]" />}
-      <img
-        src={src}
-        alt={img.title || ''}
-        className={className}
-        referrerPolicy="no-referrer"
-        // Not lazy: these tiles render above the fold as part of the
-        // hero grid, so lazy-loading can deprioritize/stall them
-        // depending on layout — load eagerly instead.
-        loading="eager"
-        onLoad={(e) => {
-          // Extra runtime check: if the browser loaded something absurdly
-          // small (a real logo can still slip past URL-pattern filtering),
-          // treat it as junk instead of showing it.
-          const { naturalWidth, naturalHeight } = e.target;
-          if (naturalWidth < 120 || naturalHeight < 120) {
-            onError();
-            return;
-          }
-          setLoaded(true);
-        }}
-        onError={onError}
-        style={{ display: 'block' }}
-      />
-      {loaded && badge && (
-        <div
-          className="absolute inset-0 flex items-center justify-center text-white text-lg font-medium"
-          style={{ background: 'rgba(13,13,12,0.55)' }}
-        >
-          {badge}
-        </div>
-      )}
+    <div className="sg-wrap">
+      <div className="sg-row" ref={ref} onScroll={measure}>
+        {shown.map(({ im, i }, n) => (
+          <Tile
+            key={i + '-' + thumbUrl(im)}
+            img={im}
+            delay={Math.min(n, 5) * 100}
+            onLoaded={measure}
+            onClick={onImageClick}
+            onFail={() => setFailed((p) => ({ ...p, [i]: true }))}
+          />
+        ))}
+      </div>
+      {edge.l && <button className="sg-arrow l" onClick={() => go(-1)}>&#8249;</button>}
+      {edge.r && <button className="sg-arrow r" onClick={() => go(1)}>&#8250;</button>}
     </div>
-  );
+  )
+}
+
+if (typeof document !== 'undefined' && !document.getElementById('sg-css')) {
+  const st = document.createElement('style')
+  st.id = 'sg-css'
+  st.textContent = `
+.sg-wrap{position:relative;margin:4px 0 16px}
+.sg-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;align-items:flex-start;padding-bottom:2px}
+.sg-row::-webkit-scrollbar{display:none}
+.sg-item{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;cursor:pointer;scroll-snap-align:start}
+.sg-img{position:relative;flex:0 0 auto;height:170px;min-width:170px;border-radius:14px;overflow:hidden;background:linear-gradient(100deg,#1a1a19 30%,#2a2a28 50%,#1a1a19 70%);background-size:220% 100%;animation:sgShim 1.4s linear infinite}
+.sg-img.ok{min-width:0;animation:none;background:#161615}
+.sg-img img{display:block;height:100%;width:auto;max-width:none;opacity:0;filter:blur(20px);transform:scale(1.06);transition:opacity .7s ease var(--d,0ms),filter .9s ease var(--d,0ms),transform .9s ease var(--d,0ms)}
+.sg-img.ok img{opacity:1;filter:blur(0);transform:scale(1)}
+.sg-cap{width:0;min-width:100%;font-size:11px;font-style:italic;line-height:1.35;color:#8A8A86;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sg-arrow{position:absolute;top:68px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(20,20,20,.92);color:#fff;font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);z-index:3}
+.sg-arrow:hover{background:#2a2a28}
+.sg-arrow.l{left:6px}.sg-arrow.r{right:6px}
+@keyframes sgShim{from{background-position:120% 0}to{background-position:-120% 0}}
+`
+  document.head.appendChild(st)
 }

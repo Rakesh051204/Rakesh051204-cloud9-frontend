@@ -43,54 +43,112 @@ export function SourcesTabs({ active, onChange, sourceCount = 0, imageCount = 0,
 // images than fit. Pass real thumbnail URLs in `images`; falls
 // back to a subtle gradient swatch if a thumb is missing.
 // ============================================================
-export function ImageResultsGrid({ images = [], visible }) {
-  if (!visible || images.length === 0) return null
-  const shown = images.slice(0, 3)
-  const remaining = images.length - shown.length
-
+function GridTile({ img, delay = 0, overlay, onClick }) {
+  const [ok, setOk] = useState(false)
+  const [bad, setBad] = useState(false)
+  const src = img.src || img.thumb || img.url
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1.4fr 1fr',
-      gridTemplateRows: '1fr 1fr',
-      gap: 6,
-      height: 200,
-      borderRadius: 14,
-      overflow: 'hidden',
-      marginBottom: 16,
-      animation: 'answerBlockIn 350ms ease both',
-    }}>
-      {shown.map((img, i) => {
-        const isLast = i === shown.length - 1 && remaining > 0
-        const gridArea = i === 0
-          ? { gridRow: '1 / 3', gridColumn: '1' }
-          : { gridRow: i === 1 ? '1' : '2', gridColumn: '2' }
-        return (
-          <div key={i} style={{
-            position: 'relative',
-            ...gridArea,
-            background: img.src ? `url(${img.src}) center/cover no-repeat` : 'linear-gradient(135deg,#2a2a28,#161615)',
-          }}>
-            {img.label && !isLast && (
-              <span style={{
-                position: 'absolute', bottom: 8, left: 10, fontSize: 11, color: 'rgba(255,255,255,0.85)',
-                textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-              }}>{img.label}</span>
-            )}
-            {isLast && (
-              <div style={{
-                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 600, color: '#EDEDEC',
-              }}>
-                +{remaining}
-              </div>
-            )}
-          </div>
-        )
-      })}
+    <div className={'irg-tile' + (ok ? ' ok' : '')} style={{ '--d': delay + 'ms' }} onClick={onClick}>
+      {src && !bad && (
+        <img
+          src={src}
+          alt={img.label || img.alt || ''}
+          ref={(el) => { if (el && !ok && el.complete && el.naturalWidth) setOk(true) }}
+          onLoad={() => setOk(true)}
+          onError={() => setBad(true)}
+        />
+      )}
+      {img.label && !overlay && ok && <span className="irg-label">{img.label}</span>}
+      {overlay}
     </div>
   )
+}
+
+function CarouselTile({ img, delay = 0, onClick, onLoaded }) {
+  const [ok, setOk] = useState(false)
+  const [bad, setBad] = useState(false)
+  const src = img.src || img.thumb || img.url
+  if (!src || bad) return null
+  const cap = img.label || img.title || img.alt || ''
+  const from = img.source || img.domain || ''
+  const done = () => { setOk(true); onLoaded && onLoaded() }
+  return (
+    <div className="gc-item" onClick={onClick}>
+      <div className={'gc-img' + (ok ? ' ok' : '')} style={{ '--d': delay + 'ms' }}>
+        <img
+          src={src}
+          alt={cap}
+          ref={(el) => { if (el && !ok && el.complete && el.naturalWidth) done() }}
+          onLoad={done}
+          onError={() => setBad(true)}
+        />
+      </div>
+      {(cap || from) && <div className="gc-cap">{cap}{from ? ' Source: ' + from : ''}</div>}
+    </div>
+  )
+}
+
+export function ImageResultsGrid({ images = [], visible, loading = false, onImageClick }) {
+  const ref = useRef(null)
+  const [edge, setEdge] = useState({ l: false, r: false })
+  const list = (images || []).filter((im) => im && (im.src || im.thumb || im.url))
+
+  const measure = () => {
+    const el = ref.current
+    if (!el) return
+    setEdge({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+  }
+  useEffect(() => { measure() }, [list.length])
+
+  if (!visible) return null
+  if (list.length === 0 && !loading) return null
+
+  const go = (d) => {
+    const el = ref.current
+    if (el) el.scrollBy({ left: d * Math.max(240, el.clientWidth * 0.7), behavior: 'smooth' })
+  }
+
+  return (
+    <div className="gc-wrap">
+      <div className="gc-row" ref={ref} onScroll={measure}>
+        {list.length === 0
+          ? [0, 1, 2].map((i) => <div key={i} className="gc-img gc-sk" />)
+          : list.map((im, i) => (
+              <CarouselTile
+                key={i + (im.src || im.thumb || im.url)}
+                img={im}
+                delay={Math.min(i, 5) * 100}
+                onLoaded={measure}
+                onClick={() => onImageClick && onImageClick(i)}
+              />
+            ))}
+      </div>
+      {edge.l && <button className="gc-arrow l" onClick={() => go(-1)}>‹</button>}
+      {edge.r && <button className="gc-arrow r" onClick={() => go(1)}>›</button>}
+    </div>
+  )
+}
+
+if (typeof document !== 'undefined' && !document.getElementById('gc-css')) {
+  const st = document.createElement('style')
+  st.id = 'gc-css'
+  st.textContent = `
+.gc-wrap{position:relative;margin:2px 0 16px;animation:answerBlockIn 350ms ease both}
+.gc-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;align-items:flex-start;padding-bottom:2px}
+.gc-row::-webkit-scrollbar{display:none}
+.gc-item{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;cursor:pointer;scroll-snap-align:start}
+.gc-img{position:relative;flex:0 0 auto;height:170px;min-width:170px;border-radius:14px;overflow:hidden;background:linear-gradient(100deg,#1a1a19 30%,#2a2a28 50%,#1a1a19 70%);background-size:220% 100%;animation:gcShim 1.4s linear infinite}
+.gc-img.ok{min-width:0;animation:none;background:#161615}
+.gc-sk{width:200px}
+.gc-img img{display:block;height:100%;width:auto;max-width:none;opacity:0;filter:blur(20px);transform:scale(1.06);transition:opacity .7s ease var(--d,0ms),filter .9s ease var(--d,0ms),transform .9s ease var(--d,0ms)}
+.gc-img.ok img{opacity:1;filter:blur(0);transform:scale(1)}
+.gc-cap{width:0;min-width:100%;font-size:11px;font-style:italic;line-height:1.35;color:#8A8A86;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gc-arrow{position:absolute;top:68px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(20,20,20,.92);color:#fff;font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);z-index:3}
+.gc-arrow:hover{background:#2a2a28}
+.gc-arrow.l{left:6px}.gc-arrow.r{right:6px}
+@keyframes gcShim{from{background-position:120% 0}to{background-position:-120% 0}}
+`
+  document.head.appendChild(st)
 }
 
 // ============================================================

@@ -1,3 +1,5 @@
+import ReportCard from './ReportCard';
+import ClockCards from './ClockCards';
 import VideoCards from './VideoCards';
 import { useState, useEffect, createElement } from 'react';
 import ImageLightbox from './ImageLightbox';
@@ -6,7 +8,10 @@ import SourceGallery from './SourceGallery';
 import InlineCitation from './InlineCitation';
 import AnswerActions from './AnswerActions';
 import GeminiCodeBlock from './GeminiCodeBlock';
+import InteractiveWidget from './InteractiveWidget';
+import WebPreview from './WebPreview';
 import ArtifactCard from './ArtifactCard';
+
 import { CornerDownRight } from 'lucide-react';
 import JobLinksCard from './JobLinksCard';
 import ThinkingPanel from './ThinkingPanel';
@@ -220,7 +225,7 @@ function renderInline(text, sources, onOpenSource, onOpenEntity) {
     }
 
     if (node.type === 'rawlink') {
-      const displayText = node.href.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const displayText = '';
       const domain = normalizeDomain(node.href);
       const favicon = domain
         ? createElement('img', {
@@ -238,7 +243,7 @@ function renderInline(text, sources, onOpenSource, onOpenEntity) {
           target: '_blank',
           rel: 'noopener noreferrer',
           className:
-            'inline-flex items-center gap-1.5 align-middle text-[#7C83DB] hover:text-[#9ea3ec] underline decoration-[#7C83DB]/40 hover:decoration-[#9ea3ec] underline-offset-2 transition-colors break-all',
+            'inline-flex items-center align-middle mx-1 no-underline hover:opacity-75 transition-opacity [&>img]:w-[18px] [&>img]:h-[18px]', title: node.href, 'aria-label': domain || 'link',
         },
         favicon,
         displayText
@@ -308,6 +313,20 @@ function ArtifactBlock({ id, language, code, onOpen }) {
   );
 }
 
+function PoemOrnament() {
+  const line = { flex: '0 0 44px', height: 1, background: 'rgba(184,169,138,0.35)' };
+  const ico = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  return (
+    <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, margin: '14px 0 6px', whiteSpace: 'normal', color: '#B8A98A' }}>
+      <span style={line} />
+      <svg width="16" height="16" viewBox="0 0 24 24" {...ico} style={{ transform: 'scaleX(-1)' }}><path d="M5 19C5 10 11 4 20 4c0 9-6 15-15 15z" /><path d="M5 19L14 10" /></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" {...ico}><path d="M2 5.5C5 4.2 8.5 4.5 12 6.5c3.5-2 7-2.3 10-1V19c-3-1.3-6.5-1-10 1-3.5-2-7-2.3-10-1z" /><path d="M12 6.5V20" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" {...ico}><path d="M5 19C5 10 11 4 20 4c0 9-6 15-15 15z" /><path d="M5 19L14 10" /></svg>
+      <span style={line} />
+    </span>
+  );
+}
+
 function renderBlock(
   block,
   sources,
@@ -326,7 +345,7 @@ function renderBlock(
     const code = fenceMatch[2].replace(/\n$/, '');
     const artifactId = `${messageId || 'msg'}-${key}`;
     return (
-      <GeminiCodeBlock key={key} language={lang} code={code} />
+      (lang === 'widget' ? <InteractiveWidget key={key} code={code} /> : lang === 'website' ? <WebPreview key={key} code={code} /> : <GeminiCodeBlock key={key} language={lang} code={code} />)
     );
   }
 
@@ -383,7 +402,9 @@ function renderBlock(
     );
   }
 
-  return <p key={key}>{renderInline(block, sources, onOpenSource, onOpenEntity)}</p>;
+  const _pl = block.split('\n');
+    const _isPoem = _pl.length >= 2 && _pl.every((l) => l.trim().length <= 70);
+    return <p key={key} style={_isPoem ? { whiteSpace: 'pre-line', textAlign: 'center', fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', fontSize: '1.06em', lineHeight: 2, color: '#E8E1CF', marginBottom: '0.4em' } : undefined}>{renderInline(block, sources, onOpenSource, onOpenEntity)}{_isPoem ? <PoemOrnament /> : null}</p>;
 }
 
 function FollowUps({ items = [], onClick }) {
@@ -423,6 +444,8 @@ export default function AnswerCard({
   jobs = [],
   images = [],
   videos = [],
+  clocks = [],
+  report = null,
   followUps = [],
   streaming = false,
   steps = [],
@@ -457,6 +480,8 @@ export default function AnswerCard({
     <div className="max-w-3xl">
       <ThinkingPanel steps={steps} streaming={streaming} />
 
+      <ClockCards clocks={clocks} />
+      {report && <ReportCard report={report} />}
       <VideoCards videos={videos} />
       {hasImages && <ImageGrid images={images} onImageClick={openImageFullscreen} />}
 

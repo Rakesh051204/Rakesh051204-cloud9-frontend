@@ -3,6 +3,7 @@ import { conversationsApi } from '../api/conversations';
 import MessageBubble from '../components/MessageBubble';
 import SearchBox from '../components/SearchBox';
 import ThinkingPanel from '../components/ThinkingPanel';
+
 import ChatTopBar from '../components/ChatTopBar';
 import Disclaimer from '../components/Disclaimer';
 import VoiceOverlay from '../components/VoiceOverlay';
@@ -250,24 +251,36 @@ export default function Home({ activeTab, setActiveTab, openSession, onSessionCh
 
           switch (payload.event) {
             case 'thinking':
-              patchAssistant(msg => ({ ...msg, steps: [...(msg.steps || []), { text: payload.text }] }));
+              patchAssistant(msg => ({ ...msg, steps: [...(msg.steps || []), { text: payload.text, sources: payload.sources, detail: payload.detail }] }));
               break;
             case 'sources':
               patchAssistant(msg => ({ ...msg, sources: payload.sources || [] }));
               break;
-            case 'videos':
+            case 'clocks':
+        patchAssistant(msg => ({ ...msg, clocks: payload.clocks || [] }));
+        break;
+      case 'report':
+        patchAssistant(msg => ({ ...msg, report: payload.report || null }));
+        break;
+      case 'videos':
         patchAssistant(msg => ({ ...msg, videos: payload.videos || [] }));
         break;
       case 'images':
               patchAssistant(msg => ({ ...msg, images: payload.images || [] }));
               break;
+            case 'email':
+              patchAssistant(msg => ({ ...msg, email: { to: payload.to, subject: payload.subject, body: payload.body } }));
+              break;
             case 'jobs':
-              patchAssistant(msg => ({ ...msg, jobs: payload.jobs || [] }));
+              /* old jobs card disabled */
               break;
             case 'token':
               patchAssistant(msg => ({ ...msg, content: (msg.content || '') + (payload.text || '') }));
               break;
-            case 'followups':
+            case 'game':
+                patchAssistant(msg => ({ ...msg, game: payload.game || null }));
+                break;
+              case 'followups':
               patchAssistant(msg => ({ ...msg, followUps: payload.followUps || [] }));
               break;
             case 'error':
@@ -491,7 +504,7 @@ export default function Home({ activeTab, setActiveTab, openSession, onSessionCh
             onDelete={handleDeleteChat}
           />
           <div className="flex-1 relative overflow-hidden">
-            <div ref={scrollContainerRef} className="h-full overflow-y-auto px-4 py-6 scroll-smooth">
+            <div ref={scrollContainerRef} className="h-full overflow-y-auto overflow-x-hidden px-4 py-6 scroll-smooth">
               <div className="max-w-3xl mx-auto w-full space-y-4">
                 {messages.map((msg, idx) => (
                   <div
@@ -500,7 +513,7 @@ export default function Home({ activeTab, setActiveTab, openSession, onSessionCh
                     ref={(el) => { messageRefs.current[msg.id || idx] = el; }}
                   >
                     {msg.role === 'assistant' && (msg.streaming || (msg.steps && msg.steps.length > 0)) && (
-                      <ThinkingPanel steps={msg.steps} streaming={msg.streaming} sources={msg.sources} />
+                      (msg.streaming && !msg.content) ? <ThinkingPanel steps={msg.steps} streaming={msg.streaming} sources={msg.sources} /> : null
                     )}
                     <MessageBubble
                       message={msg} isUser={msg.role === 'user'} isStreaming={msg.streaming}
@@ -510,6 +523,7 @@ export default function Home({ activeTab, setActiveTab, openSession, onSessionCh
                       onOpenSources={openSourcesPanel} onOpenImages={openImagesPanel}
                       onOpenSourceDetail={openSourceDetail} onOpenEntity={openEntityDetail}
                     />
+                    
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
