@@ -1,3 +1,4 @@
+import PaperWork from "./PaperWork";
 import ReportCard from './ReportCard';
 import ClockCards from './ClockCards';
 import VideoCards from './VideoCards';
@@ -63,7 +64,18 @@ function resolveSource(sourceMap, sources, rawKey) {
   });
 }
 
+function normalizeMathLayout(text) {
+  if (typeof text !== 'string' || (text.indexOf('\\[') === -1 && text.indexOf('**Step') === -1)) return text;
+  return text.split(/(```[\s\S]*?```)/).map((part, i) => {
+    if (i % 2 === 1) return part;
+    return part
+      .replace(/[ \t]*\\\[([\s\S]*?)\\\][ \t]*/g, (m, inner) => '\n\n\\[' + inner.trim() + '\\]\n\n')
+      .replace(/(^|\n)[ \t]*(\*\*Step\s+\d+[^\n]*?\*\*)[ \t]*(?=\n|$)/g, '$1\n$2\n');
+  }).join('');
+}
+
 function splitIntoBlocks(content) {
+  content = normalizeMathLayout(content);
   const lines = content.split('\n');
   const blocks = [];
   let current = [];
@@ -345,7 +357,7 @@ function renderBlock(
     const code = fenceMatch[2].replace(/\n$/, '');
     const artifactId = `${messageId || 'msg'}-${key}`;
     return (
-      (lang === 'widget' ? <InteractiveWidget key={key} code={code} /> : lang === 'website' ? <WebPreview key={key} code={code} /> : <GeminiCodeBlock key={key} language={lang} code={code} />)
+      (lang === 'mathwork' ? <PaperWork key={key} code={code} /> : lang === 'widget' ? <InteractiveWidget key={key} code={code} /> : lang === 'website' ? <WebPreview key={key} code={code} /> : <GeminiCodeBlock key={key} language={lang} code={code} />)
     );
   }
 
@@ -353,6 +365,7 @@ function renderBlock(
   if (openFence && isStreamingLast) {
     const codeLines = trimmed.split('\n').slice(1);
     const partialCode = codeLines.join('\n');
+    if (openFence[1] === 'mathwork') { return <PaperWork key={key} code={partialCode} live={true} />; }
     return (
       <GeminiCodeBlock
         key={key}
@@ -403,7 +416,7 @@ function renderBlock(
   }
 
   const _pl = block.split('\n');
-    const _isPoem = _pl.length >= 2 && _pl.every((l) => l.trim().length <= 70);
+    const _isPoem = _pl.length >= 3 && _pl.every((l) => l.trim().length <= 70 && !/^\s*(\d+[.)]|[-*#>\u2022])\s|\*\*|\\\[|\\\(|\$\$|\[\[|\]\(|https?:|\|/.test(l));
     return <p key={key} style={_isPoem ? { whiteSpace: 'pre-line', textAlign: 'center', fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: 'italic', fontSize: '1.06em', lineHeight: 2, color: '#E8E1CF', marginBottom: '0.4em' } : undefined}>{renderInline(block, sources, onOpenSource, onOpenEntity)}{_isPoem ? <PoemOrnament /> : null}</p>;
 }
 
