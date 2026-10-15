@@ -1,0 +1,102 @@
+﻿/* ============================================================
+   PART 1 — Add these near your other require() lines at the top of index.js
+   ============================================================ */
+
+const { createClient } = require('@supabase/supabase-js')
+const groqToolDefinitions = require('./connectors/toolDefinitionsGroq')
+const { executeOpenAIToolCalls } = require('./connectors/toolExecutor')
+
+// TODO: if you already create a supabase client elsewhere in index.js,
+// delete this and reuse that variable instead.
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY // service key, not anon key — server-side only
+)
+
+// No real auth yet, so every request acts as this one local user —
+// this matches the user_id already used for your 3 connections in
+// the user_connectors table. Once you add login, replace this with
+// the actual logged-in user's id.
+const DEFAULT_USER_ID = process.env.DEFAULT_USER_ID || 'user_u7bqbp9x2gqmsomj7zc'
+
+// Simple keyword check — good enough to avoid calling Groq with tools
+// attached on every single message (adds latency + cost).
+function isConnectorQuery(message) {
+  const m = message.toLowerCase()
+  const mentionsService = /\b(slack|notion|github)\b/.test(m)
+  const mentionsAction = /\b(send|message|create|list|show|get|check|search|comment|issue|repo|page|channel)\b/.test(m)
+  return mentionsService && mentionsAction
+}
+
+/* ============================================================
+   PART 2 — Add this branch INSIDE app.post('/api/chat/stream', ...),
+   right after the isLanguageSwitch block and BEFORE the line:
+     send('thinking', { text: 'Understanding your question' })
+   ============================================================ */
+
+if (isConnectorQuery(message)) {
+  send('thinking', { text: 'Checking your connected apps' })
+  send('sources', { sources: [] })
+  send('images', { images: [] })
+
+  try {
+    const toolMessages = [
+      { role: 'system', content: 'You can call tools to interact with the user\'s connected Slack, Notion, and GitHub accounts. Use a tool when the user asks you to fetch or act on data from one of these.' },
+      ...getHistory(sessionId),
+      { role: 'user', content: message },
+    ]
+
+    // First pass: non-streaming, so we can see if Groq wants to call a tool
+    const firstPass = await groq.chat.completions.create({
+      model: ANSWER_MODEL,
+      messages: toolMessages,
+      tools: groqToolDefinitions,
+      tool_choice: 'auto',
+      temperature: 0.3,
+    })
+
+    const choice = firstPass.choices[0]
+    let finalMessages = toolMessages
+
+    if (choice.finish_reason === 'tool_calls' && choice.message.tool_calls?.length) {
+      send('thinking', { text: 'Running the action' })
+
+      finalMessages = [
+        ...toolMessages,
+        choice.message, // the assistant's tool_calls message
+        ...(await executeOpenAIToolCalls(supabase, DEFAULT_USER_ID, choice.message.tool_calls)),
+      ]
+    }
+
+    // Second pass: streaming, so the final answer types out as normal
+    send('thinking', { text: 'Writing the answer' })
+    const finalStream = await groq.chat.completions.create({
+      model: ANSWER_MODEL,
+      messages: finalMessages,
+      temperature: 0.4,
+      stream: true,
+    })
+
+    let connectorContent = ''
+    for await (const chunk of finalStream) {
+      const delta = chunk.choices?.[0]?.delta?.content
+      if (delta) {
+        connectorContent += delta
+        send('token', { text: delta })
+      }
+    }
+
+    appendHistory(sessionId, 'user', message)
+    appendHistory(sessionId, 'assistant', connectorContent)
+
+    send('followups', { followUps: [] })
+    send('done', {})
+    return res.end()
+  } catch (connectorError) {
+    console.error('Connector error:', connectorError)
+    send('token', { text: 'Something went wrong reaching that app: ' + connectorError.message })
+    send('done', {})
+    return res.end()
+  }
+}
+

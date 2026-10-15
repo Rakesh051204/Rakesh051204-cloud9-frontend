@@ -11,29 +11,26 @@
 
 @theme {
   /* ---- Surfaces ---- */
-  --color-bg-surface: #000000;       /* base canvas, true black */
+  --color-bg-surface: #000000;
   --color-bg-sidebar: #000000;
-  --color-bg-elevated: #0A0A0A;      /* cards / panels, barely lifted */
-  --color-bg-accent: #161616;        /* hover surface */
-  --color-bg-accent-hover: #202020;  /* active/pressed surface */
+  --color-bg-elevated: #0A0A0A;
+  --color-bg-accent: #161616;
+  --color-bg-accent-hover: #202020;
   --color-bg-pill: #000000;
 
   /* ---- Text ---- */
-  --color-text-primary: #F2F2F0;     /* warm off-white — avoids halation on OLED */
+  --color-text-primary: #F2F2F0;
   --color-text-secondary: #9E9E9C;
   --color-text-muted: #5C5C5A;
 
   /* ---- Borders ---- */
-  --color-border-border: rgba(255, 255, 255, 0.06); /* true hairline */
+  --color-border-border: rgba(255, 255, 255, 0.06);
   --color-border-strong: rgba(255, 255, 255, 0.12);
 
   /* ---- The one signature color ---- */
-  /* Reserved ONLY for: send button, assistant avatar mark, active
-     "thinking" pulse. Do not use for links, hover states, icons,
-     focus rings, or any decorative chrome. */
   --color-accent-clay: #CC785C;
   --color-accent-clay-hover: #D88A6E;
-  --color-accent-clay-muted: rgba(204, 120, 92, 0.16); /* for the thinking pulse glow only */
+  --color-accent-clay-muted: rgba(204, 120, 92, 0.16);
 
   /* ---- Thinking / voice accent — icy teal (not clay) ---- */
   --color-accent-teal: #4FD1C5;
@@ -48,17 +45,12 @@
   --font-sans: "DM Sans", system-ui, sans-serif;
 }
 
-/* ==========================================================================
-   Base
-   ========================================================================== */
-
 body {
   background-color: var(--color-bg-surface);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
 
-/* ========== Remove all underlines, links inherit color (no accent) ========== */
 a,
 a:visited,
 a:hover,
@@ -68,7 +60,6 @@ a:focus {
   color: inherit;
 }
 
-/* ========== White scrollbar ========== */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -86,18 +77,11 @@ a:focus {
   background: var(--color-scrollbar-thumb-hover);
 }
 
-/* ========== Focus states — visible, but neutral (not clay) ========== */
 :focus-visible {
   outline: 1px solid var(--color-border-strong);
   outline-offset: 2px;
 }
 
-/* ==========================================================================
-   Signature element — empty / new-chat state
-   A single oversized serif glyph at low opacity. Austerity made visible:
-   the "nothing here yet" state is a deliberate void, not a placeholder.
-   Usage: <div class="stoic-void-mark">"</div>  (or an em dash, per screen)
-   ========================================================================== */
 .stoic-void-mark {
   font-family: var(--font-serif);
   font-size: clamp(6rem, 18vw, 14rem);
@@ -108,9 +92,6 @@ a:focus {
   pointer-events: none;
 }
 
-/* ==========================================================================
-   The one accent — send button
-   ========================================================================== */
 .stoic-send-button {
   background-color: var(--color-accent-clay);
   color: #000000;
@@ -124,17 +105,11 @@ a:focus {
   color: var(--color-text-muted);
 }
 
-/* ==========================================================================
-   The one accent — assistant avatar mark
-   ========================================================================== */
 .stoic-avatar-mark {
   background-color: var(--color-accent-clay);
   color: #000000;
 }
 
-/* ==========================================================================
-   The one accent — thinking / active state pulse (now teal, not clay)
-   ========================================================================== */
 @keyframes stoic-thinking-pulse {
   0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-teal-muted); }
   50%      { box-shadow: 0 0 0 6px var(--color-accent-teal-muted); }
@@ -144,15 +119,11 @@ a:focus {
   animation: stoic-thinking-pulse 1.8s ease-in-out infinite;
 }
 
-/* Voice button active state — uses same teal pulse */
 .stoic-voice-active {
   color: var(--color-accent-teal) !important;
   animation: stoic-thinking-pulse 1.8s ease-in-out infinite;
 }
 
-/* ==========================================================================
-   Logo click — spin once on click (new chat trigger)
-   ========================================================================== */
 @keyframes spin-once {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -162,9 +133,6 @@ a:focus {
   animation: spin-once 0.6s ease-in-out;
 }
 
-/* ==========================================================================
-   Logo — slow continuous spin while assistant is "thinking"
-   ========================================================================== */
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -174,14 +142,6 @@ a:focus {
   animation: spin-slow 1.4s linear infinite;
 }
 
-/* ==========================================================================
-   Chat scroll region — explicit opt-in scrollbar for the message feed.
-   Uses the same white thumb as the global scrollbar above (clay stays
-   reserved for send button / avatar / thinking pulse only, per the rule
-   at the top of this file). This class exists so the chat container can
-   be targeted independently (e.g. thin Firefox scrollbar) without changing
-   global scrollbar behavior elsewhere in the app.
-   ========================================================================== */
 .chat-scroll {
   overflow-y: auto;
   scrollbar-width: thin;
@@ -204,9 +164,7 @@ a:focus {
 .chat-scroll::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-scrollbar-thumb-hover);
 }
-/* ==========================================================================
-   Ask box — Claude-style composer, "Ask anything"
-   ========================================================================== */
+
 .ask-box {
   display: flex;
   align-items: flex-end;
@@ -250,9 +208,6 @@ a:focus {
   flex-shrink: 0;
 }
 
-/* ==========================================================================
-   Disclaimer footer
-   ========================================================================== */
 .disclaimer-text {
   text-align: center;
   font-size: 12px;
@@ -284,11 +239,70 @@ a:focus {
 .voice-overlay-backdrop {
   position: fixed;
   inset: 0;
-  background: #000000;   /* solid black, no bleed-through */
+  background: #000000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 24px;
-  z-index: 9999;          /* always on top */
+  z-index: 9999;
 }
+
+/* ==========================================================================
+   SEARCH BOX SILVER BORDER — FORCED VIA ID + !important
+   ========================================================================== */
+#search-box {
+  border: 1px solid #C0C0C0 !important;
+  box-shadow: 0 0 0 1px #C0C0C0 !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#search-box:focus-within {
+  border-color: #9A9AA0 !important;
+  box-shadow: 
+    0 0 0 1px #9A9AA0,
+    0 0 20px rgba(100, 120, 140, 0.3),
+    0 0 40px rgba(80, 100, 130, 0.15) !important;
+}
+
+#search-box:focus-within {
+  animation: build-glow 2s ease-in-out infinite;
+}
+
+@keyframes build-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 1px #9A9AA0,
+      0 0 20px rgba(100, 120, 140, 0.3),
+      0 0 40px rgba(80, 100, 130, 0.15);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 1px #9A9AA0,
+      0 0 30px rgba(120, 140, 160, 0.4),
+      0 0 60px rgba(80, 100, 130, 0.25);
+  }
+}
+
+/* Kill any browser/extension-injected border on the composer textarea */
+textarea#stoic-search-no-autofill {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+img { max-width: 100%; height: auto; }
+.answer-content img, .citation-pill img { width: 16px !important; height: 16px !important; object-fit: contain; }
+
+/* === no-horizontal-scrollbar fix v2 === */
+html, body, #root { max-width: 100%; overflow-x: hidden; }
+main, [class*="overflow-y-auto"], [class*="overflow-auto"], [class*="overflow-y-scroll"] { overflow-x: hidden !important; }
+*::-webkit-scrollbar:horizontal { display: none !important; height: 0 !important; }
+*::-webkit-scrollbar { width: 6px; }
+*::-webkit-scrollbar-thumb { background: #2a2a28; border-radius: 3px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-button { display: none; }
+pre, table { max-width: 100%; overflow-x: auto; }
+/* === end fix v2 === */

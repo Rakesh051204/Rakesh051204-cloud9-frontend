@@ -12,7 +12,7 @@ export default function Layout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   return (
-    <div className="relative flex h-screen w-full bg-black overflow-hidden">
+    <div className="relative h-screen w-full bg-black overflow-hidden">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -24,7 +24,7 @@ export default function Layout({
         setSidebarOpen={setSidebarOpen}
       />
       <main
-        className={`flex-1 h-full flex flex-col bg-black transition-[margin] duration-200 ${
+        className={`h-full flex flex-col bg-black transition-all duration-200 ease-in-out ${
           sidebarOpen ? 'ml-64' : 'ml-16'
         }`}
       >

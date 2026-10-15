@@ -5,11 +5,23 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircleQuestion,
-  Loader2,
-  Circle,
-  CheckCircle2,
   Globe,
 } from 'lucide-react';
+
+function SafeImg({ src, alt, className }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return <div className={`${className} bg-white/[0.04]`} />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt || ''}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function getDomain(source) {
   try {
@@ -24,7 +36,7 @@ function SourcePill({ source }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11.5px] text-gray-300 max-w-full">
       {source.favicon && (
-        <img src={source.favicon} alt="" className="w-3.5 h-3.5 rounded-sm flex-shrink-0" />
+        <SafeImg src={source.favicon} alt="" className="w-3.5 h-3.5 rounded-sm flex-shrink-0" />
       )}
       <span className="truncate">{domain}</span>
     </span>
@@ -67,7 +79,7 @@ function SourceDetail({ source, images, onBack }) {
       {relatedImages.length > 0 && (
         <div className="grid grid-cols-3 gap-1.5 mb-4 rounded-xl overflow-hidden">
           {relatedImages.map((img, i) => (
-            <img key={i} src={img.src} alt={img.alt || ''} className="w-full h-24 object-cover" />
+            <SafeImg key={i} src={img.src} alt={img.alt || ''} className="w-full h-24 object-cover" />
           ))}
         </div>
       )}
@@ -117,7 +129,7 @@ function EntityDetail({ name, sources, images, onBack, onAskMore }) {
       {displayImages.length > 0 && (
         <div className="grid grid-cols-3 gap-1.5 mb-4 rounded-xl overflow-hidden">
           {displayImages.map((img, i) => (
-            <img key={i} src={img.src} alt={img.alt || ''} className="w-full h-24 object-cover" />
+            <SafeImg key={i} src={img.src} alt={img.alt || ''} className="w-full h-24 object-cover" />
           ))}
         </div>
       )}
@@ -174,7 +186,7 @@ function ImageCarousel({ images = [], onImageClick }) {
     <div>
       <div className="relative rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.06] mb-3">
         <button onClick={() => onImageClick(current)} className="block w-full">
-          <img src={current.src} alt={current.alt || ''} className="w-full h-64 object-cover" />
+          <SafeImg src={current.src} alt={current.alt || ''} className="w-full h-64 object-cover" />
         </button>
 
         {images.length > 1 && (
@@ -221,90 +233,10 @@ function ImageCarousel({ images = [], onImageClick }) {
               i === index ? 'border-[#7C83DB]' : 'border-transparent opacity-60 hover:opacity-100'
             }`}
           >
-            <img src={img.src} alt="" className="w-full h-14 object-cover" />
+            <SafeImg src={img.src} alt="" className="w-full h-14 object-cover" />
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ============================================================
-// Steps tab — mirrors ThinkingPanel's `steps` list (same prop,
-// same shape: { text, sources?, done? }) but rendered as a
-// vertical timeline: filled circle for the active step, check
-// for completed ones, and a "Finished" row once streaming ends.
-// This is the piece that matches the Meta AI reference video's
-// side-panel "Steps" tab.
-// ============================================================
-function StepRow({ step, isActive, isLast, streaming }) {
-  const icon = /search/i.test(step.text || '') ? (
-    <Globe size={12} className="text-gray-500" />
-  ) : null;
-
-  let statusIcon;
-  if (isActive && streaming) {
-    statusIcon = <Loader2 size={14} className="text-[#7C83DB] animate-spin shrink-0 mt-0.5" />;
-  } else if (isActive && !streaming && isLast) {
-    statusIcon = <CheckCircle2 size={14} className="text-[#7C83DB] shrink-0 mt-0.5" />;
-  } else {
-    statusIcon = <CheckCircle2 size={14} className="text-[#7C83DB] shrink-0 mt-0.5" />;
-  }
-
-  return (
-    <div className="flex items-start gap-2">
-      {statusIcon}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-[13.5px] text-gray-200">
-          {icon}
-          <span>{step.text}</span>
-        </div>
-        {step.sources && step.sources.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {step.sources.slice(0, 3).map((s, i) => (
-              <span
-                key={s.url || i}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[10.5px] text-gray-400 max-w-[120px]"
-              >
-                {s.favicon && (
-                  <img src={s.favicon} alt="" className="w-3 h-3 rounded-sm flex-shrink-0" />
-                )}
-                <span className="truncate">{getDomain(s)}</span>
-              </span>
-            ))}
-            {step.sources.length > 3 && (
-              <span className="text-[10.5px] text-gray-500 px-1.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
-                +{step.sources.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StepsList({ steps = [], streaming }) {
-  if (!steps.length) {
-    return <div className="text-[13px] text-gray-500">No steps yet.</div>;
-  }
-  return (
-    <div className="space-y-3.5">
-      {steps.map((step, idx) => (
-        <StepRow
-          key={idx}
-          step={step}
-          isActive={idx === steps.length - 1}
-          isLast={idx === steps.length - 1}
-          streaming={streaming}
-        />
-      ))}
-      {!streaming && (
-        <div className="flex items-center gap-2 pt-0.5">
-          <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-          <span className="text-[13.5px] text-gray-300">Finished</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -329,12 +261,10 @@ export default function SourcesPanel({
   onClose,
   sources = [],
   images = [],
-  steps = [],
-  streaming = false,
   focusedItem,
   onBack,
   onSelectSource,
-  tab = 'steps',
+  tab = 'sources',
   onTabChange,
   onImageClick,
   onAskMore,
@@ -342,6 +272,10 @@ export default function SourcesPanel({
   const isSourceDetail = focusedItem && focusedItem.type === 'source';
   const isEntityDetail = focusedItem && focusedItem.type === 'entity';
   const showDetail = isSourceDetail || isEntityDetail;
+
+  // Steps tab was removed -- panel only ever shows Sources/Images now,
+  // so if something upstream still passes tab="steps", fall back to sources.
+  const effectiveTab = tab === 'steps' ? 'sources' : tab;
 
   useEffect(() => {
     if (!open) return;
@@ -373,13 +307,10 @@ export default function SourcesPanel({
 
         {!showDetail && (
           <div className="flex items-center px-2 border-b border-white/[0.06] flex-shrink-0 overflow-x-auto">
-            <TabButton active={tab === 'steps'} onClick={() => onTabChange('steps')}>
-              Steps
-            </TabButton>
-            <TabButton active={tab === 'sources'} onClick={() => onTabChange('sources')}>
+            <TabButton active={effectiveTab === 'sources'} onClick={() => onTabChange('sources')}>
               Sources ({sources.length})
             </TabButton>
-            <TabButton active={tab === 'images'} onClick={() => onTabChange('images')}>
+            <TabButton active={effectiveTab === 'images'} onClick={() => onTabChange('images')}>
               Images ({images.length})
             </TabButton>
           </div>
@@ -396,9 +327,7 @@ export default function SourcesPanel({
               onBack={onBack}
               onAskMore={onAskMore}
             />
-          ) : tab === 'steps' ? (
-            <StepsList steps={steps} streaming={streaming} />
-          ) : tab === 'images' ? (
+          ) : effectiveTab === 'images' ? (
             <ImageCarousel images={images} onImageClick={onImageClick} />
           ) : (
             <div className="grid grid-cols-1 gap-2.5">

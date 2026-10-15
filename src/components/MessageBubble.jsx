@@ -1,7 +1,12 @@
-﻿import { useState } from 'react';
+import AttachmentList from './AttachmentList';
+import { useState } from 'react';
+import ImageGrid from './ImageGrid';
 import { Copy, RotateCcw, Pencil, Check, FileText, X } from 'lucide-react';
 import AnswerCard from './AnswerCard';
 import ThinkingPanel from './ThinkingPanel';
+import EmailComposeCard from './EmailComposeCard';
+import GameCard from './GameCard';
+import DnaCard from './DnaCard';
 
 function normalizeImages(images = []) {
   return images.map((img) => ({
@@ -26,6 +31,7 @@ export default function MessageBubble({
   onOpenImages,
   onOpenSourceDetail,
   onOpenEntity,
+  onOpenArtifact,
 }) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,17 +82,39 @@ export default function MessageBubble({
     if (!hasContent) return null;
 
     const normalizedImages = normalizeImages(message.images ?? []);
+    const takeBlock = (txt, lang) => {
+      const mt = txt.match(new RegExp('```' + lang + '\\s*([\\s\\S]*?)```'));
+      if (!mt) return [txt, null];
+      let d = null;
+      try { d = JSON.parse(mt[1]); } catch (e) {}
+      return [txt.replace(mt[0], '').trim(), d];
+    };
+    let shownContent = message.content || '';
+    let emailData = message.email || null;
+    let dnaData = null;
+    const r1 = takeBlock(shownContent, 'email');
+    shownContent = r1[0];
+    if (r1[1]) emailData = r1[1];
+    const r2 = takeBlock(shownContent, 'dna');
+    shownContent = r2[0];
+    if (r2[1]) dnaData = r2[1];
 
     return (
       <div className="w-full" style={{ overflow: 'visible' }}>
         <div style={{ maxHeight: 'none', overflow: 'visible', width: '100%' }}>
-          <AnswerCard
-            content={message.content}
+                  <AnswerCard
+            content={shownContent}
             sources={message.sources ?? []}
             jobs={message.jobs ?? []}
             followUps={message.followUps ?? []}
             images={normalizedImages}
+            videos={message.videos ?? []}
+            clocks={message.clocks ?? []}
+            report={message.report ?? null}
             timestamp={message.timestamp}
+            steps={message.steps ?? []}
+            streaming={isStreaming}
+            messageId={message.id}
             onFollowUpClick={(text) => onSendQuery?.(text)}
             onRegenerate={() => onRegenerate?.(message.id)}
             onFeedback={onFeedback}
@@ -94,7 +122,11 @@ export default function MessageBubble({
             onOpenImages={onOpenImages}
             onOpenSourceDetail={onOpenSourceDetail}
             onOpenEntity={onOpenEntity}
+            onOpenArtifact={onOpenArtifact}
           />
+          {emailData && <EmailComposeCard key="email-card" to={emailData.to} subject={emailData.subject} body={emailData.body} />}
+          {message.game && <GameCard key="game-card" game={message.game} />}
+          {dnaData && <DnaCard items={dnaData} />}
         </div>
       </div>
     );
@@ -110,28 +142,7 @@ export default function MessageBubble({
   return (
     <div className="group flex justify-end w-full">
       <div className="flex flex-col items-end gap-1 max-w-[85%]">
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-end mb-1">
-            {message.attachments.map((att, i) =>
-              att.type === 'image' && att.previewUrl ? (
-                <img
-                  key={att.id || i}
-                  src={att.previewUrl}
-                  alt={att.name || 'attachment'}
-                  className="w-20 h-20 object-cover rounded-xl border border-[#2a2a2a]"
-                />
-              ) : (
-                <div
-                  key={att.id || i}
-                  className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl max-w-[200px]"
-                >
-                  <FileText size={16} className="text-gray-400 shrink-0" />
-                  <span className="text-xs text-gray-300 truncate">{att.name}</span>
-                </div>
-              )
-            )}
-          </div>
-        )}
+        <AttachmentList attachments={message.attachments} />
 
         {isEditing ? (
           <div className="w-full min-w-[280px] px-4 py-3 bg-[#1a1a1a] border border-[#7C83DB] rounded-2xl rounded-tr-sm">

@@ -21,6 +21,8 @@ async function request(path, options = {}) {
 export const conversationsApi = {
   list: () => request('/api/conversations'),
 
+  messages: (id) => request(`/api/conversations/${id}/messages`),
+
   share: (id) => request(`/api/conversations/${id}/share`, { method: 'POST' }),
 
   rename: (id, title) =>

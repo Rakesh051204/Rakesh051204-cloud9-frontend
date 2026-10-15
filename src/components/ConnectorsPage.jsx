@@ -1,12 +1,28 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+﻿import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Search, Plus, Check, Globe, Mail, Calendar, FileText,
   MessageSquare, HardDrive, Sparkles, Loader2,
 } from 'lucide-react';
-import { FaGithub, FaSlack } from 'react-icons/fa';   // ← only one import for both icons
+import { FaGithub } from 'react-icons/fa';
+import { SiNotion } from 'react-icons/si';
 import { connectorsApi } from '../api/connectors';
 
-// ─── Connector catalog ──────────────────────────────────────────────
+function SlackLogo({ size = 17 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 122.8 122.8">
+      <path d="M25.8,77.6c0,7.1-5.8,12.9-12.9,12.9C5.8,90.5,0,84.7,0,77.6c0-7.1,5.8-12.9,12.9-12.9h12.9V77.6z" fill="#E01E5A"/>
+      <path d="M32.3,77.6c0-7.1,5.8-12.9,12.9-12.9c7.1,0,12.9,5.8,12.9,12.9v32.3c0,7.1-5.8,12.9-12.9,12.9c-7.1,0-12.9-5.8-12.9-12.9V77.6z" fill="#E01E5A"/>
+      <path d="M45.2,25.8c-7.1,0-12.9-5.8-12.9-12.9C32.3,5.8,38.1,0,45.2,0c7.1,0,12.9,5.8,12.9,12.9v12.9H45.2z" fill="#36C5F0"/>
+      <path d="M45.2,32.3c7.1,0,12.9,5.8,12.9,12.9c0,7.1-5.8,12.9-12.9,12.9H12.9C5.8,58.1,0,52.3,0,45.2c0-7.1,5.8-12.9,12.9-12.9H45.2z" fill="#36C5F0"/>
+      <path d="M97,45.2c0-7.1,5.8-12.9,12.9-12.9c7.1,0,12.9,5.8,12.9,12.9c0,7.1-5.8,12.9-12.9,12.9H97V45.2z" fill="#2EB67D"/>
+      <path d="M90.5,45.2c0,7.1-5.8,12.9-12.9,12.9c-7.1,0-12.9-5.8-12.9-12.9V12.9C64.7,5.8,70.5,0,77.6,0c7.1,0,12.9,5.8,12.9,12.9V45.2z" fill="#2EB67D"/>
+      <path d="M77.6,97c7.1,0,12.9,5.8,12.9,12.9c0,7.1-5.8,12.9-12.9,12.9c-7.1,0-12.9-5.8-12.9-12.9V97H77.6z" fill="#ECB22E"/>
+      <path d="M77.6,90.5c-7.1,0-12.9-5.8-12.9-12.9c0-7.1,5.8-12.9,12.9-12.9h32.3c7.1,0,12.9,5.8,12.9,12.9c0,7.1-5.8,12.9-12.9,12.9H77.6z" fill="#ECB22E"/>
+    </svg>
+  );
+}
+
+// â”€â”€â”€ Connector catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // `live: true` means the backend actually supports this provider
 // (currently only github). Everything else renders as "Soon" until a
 // matching route + PROVIDERS entry exists server-side.
@@ -55,17 +71,17 @@ const CONNECTOR_CATALOG = [
     id: 'notion',
     name: 'Notion',
     description: 'Search workspace content, update notes, and keep docs in sync',
-    icon: FileText,
+    icon: SiNotion,
     color: '#F2F2F0',
-    live: false,
+    live: true,
   },
   {
     id: 'slack',
     name: 'Slack',
     description: 'Search channels, summarize threads, and draft messages',
-    icon: FaSlack,
-    color: '#7C83DB',
-    live: false,
+    icon: SlackLogo,
+    color: '#4A154B',
+    live: true,
   },
   {
     id: 'messages',
@@ -73,7 +89,7 @@ const CONNECTOR_CATALOG = [
     description: 'Bring Stoic into your DMs and group chats',
     icon: MessageSquare,
     color: '#CC785C',
-    live: false,
+    live: true,
   },
 ];
 
@@ -105,7 +121,7 @@ function ConnectorCard({ connector, connected, busy, providerUsername, onConnect
       <button
         onClick={() => (connected ? onDisconnect(connector.id) : onConnect(connector.id))}
         disabled={!connector.live || busy}
-        title={!connector.live ? 'Coming soon' : connected ? 'Disconnect' : 'Connect'}
+        title={!connector.live ? 'Coming soon' : connected ? 'Disconnect' : `Sign in with ${connector.name}`}
         className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
           !connector.live
             ? 'bg-white/[0.03] text-gray-700 cursor-not-allowed'
@@ -162,7 +178,15 @@ export default function ConnectorsPage() {
   const handleConnect = (id) => {
     setBusyId(id);
     if (id === 'github') {
-      connectorsApi.connectGithub(); // navigates away, no need to clear busyId
+      connectorsApi.connectGithub();
+      return;
+    }
+    if (id === 'notion') {
+      connectorsApi.connectNotion();
+      return;
+    }
+    if (id === 'slack') {
+      connectorsApi.connectSlack();
       return;
     }
     setBusyId(null);
@@ -211,7 +235,7 @@ export default function ConnectorsPage() {
           >
             <span>{banner.text}</span>
             <button onClick={() => setBanner(null)} className="text-inherit opacity-60 hover:opacity-100">
-              ✕
+              âœ•
             </button>
           </div>
         )}
